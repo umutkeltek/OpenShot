@@ -37,7 +37,7 @@ struct SettingsView: View {
 // MARK: - General
 
 struct GeneralSettingsTab: View {
-    @State private var preferences = Preferences.shared
+    @Bindable private var preferences = Preferences.shared
 
     var body: some View {
         Form {
@@ -117,7 +117,7 @@ struct GeneralSettingsTab: View {
 // MARK: - Capture
 
 struct CaptureSettingsTab: View {
-    @State private var preferences = Preferences.shared
+    @Bindable private var preferences = Preferences.shared
     @State private var selectedPreset: WindowBackgroundRenderer.PresetBackground = .oceanBlue
 
     var body: some View {
@@ -198,7 +198,7 @@ struct CaptureSettingsTab: View {
 // MARK: - Recording
 
 struct RecordingSettingsTab: View {
-    @State private var preferences = Preferences.shared
+    @Bindable private var preferences = Preferences.shared
 
     var body: some View {
         Form {
@@ -227,7 +227,7 @@ struct RecordingSettingsTab: View {
 // MARK: - Overlay
 
 struct OverlaySettingsTab: View {
-    @State private var preferences = Preferences.shared
+    @Bindable private var preferences = Preferences.shared
 
     var body: some View {
         Form {
@@ -302,7 +302,7 @@ struct ShortcutRow: View {
 // MARK: - History
 
 struct HistorySettingsTab: View {
-    @State private var preferences = Preferences.shared
+    @Bindable private var preferences = Preferences.shared
 
     var body: some View {
         Form {

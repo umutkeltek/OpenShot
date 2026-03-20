@@ -28,6 +28,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         hotkeyManager.unregisterAll()
+        NotificationCenter.default.removeObserver(self)
+        recordingTimer?.invalidate()
+        recordingTimer = nil
         logger.info("OpenShot terminating")
     }
 
@@ -369,8 +372,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showSettings() {
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        // Must activate BEFORE showing settings — LSUIElement apps need this order
         NSApp.activate(ignoringOtherApps: true)
+
+        // macOS 14+ uses "showSettingsWindow:", macOS 13 used "showPreferencesWindow:"
+        if #available(macOS 14, *) {
+            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        } else {
+            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+        }
     }
 
     @objc private func quitApp() {
@@ -471,9 +481,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let minutes = elapsed / 60
             let seconds = elapsed % 60
             let timeString = String(format: "%02d:%02d", minutes, seconds)
-            DispatchQueue.main.async {
-                self.statusItem.button?.title = " \(timeString)"
-            }
+            self.statusItem.button?.title = " \(timeString)"
         }
     }
 

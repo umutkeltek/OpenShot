@@ -164,9 +164,7 @@ final class QuickAccessOverlay {
         let delay = preferences.overlayAutoCloseDelay
         guard delay > 0 else { return } // 0 means "Never"
         autoCloseTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
-            DispatchQueue.main.async {
-                self?.dismiss()
-            }
+            self?.dismiss()
         }
     }
 
