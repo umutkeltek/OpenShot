@@ -171,6 +171,7 @@ final class GIFRecorder {
 
     private var frames: [GIFExporter.GIFFrame] = []
     private var captureTimer: DispatchSourceTimer?
+    private var elapsedTimeTimer: Timer?
     private var startDate: Date?
     private let fps: Double = 10
     private var captureRect: CGRect?
@@ -213,13 +214,15 @@ final class GIFRecorder {
     /// Stop capturing and export all collected frames to an animated GIF.
     /// Returns the URL of the exported GIF file.
     func stopCapture() async throws -> URL {
+        // Always cancel timers first, regardless of state
+        captureTimer?.cancel()
+        captureTimer = nil
+        stopElapsedTimeUpdates()
+
         guard isRecording else {
             throw OpenShotError.gifExportFailed("No GIF capture in progress")
         }
 
-        // Stop capturing
-        captureTimer?.cancel()
-        captureTimer = nil
         isRecording = false
 
         let capturedFrames = frames
@@ -299,10 +302,10 @@ final class GIFRecorder {
     // MARK: - Elapsed Time
 
     private func startElapsedTimeUpdates() {
-        // Update elapsed time on main thread at ~10Hz
+        elapsedTimeTimer?.invalidate()
         DispatchQueue.main.async { [weak self] in
             guard let self, self.isRecording else { return }
-            Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] timer in
+            self.elapsedTimeTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] timer in
                 guard let self else {
                     timer.invalidate()
                     return
@@ -316,5 +319,10 @@ final class GIFRecorder {
                 }
             }
         }
+    }
+
+    private func stopElapsedTimeUpdates() {
+        elapsedTimeTimer?.invalidate()
+        elapsedTimeTimer = nil
     }
 }

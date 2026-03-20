@@ -58,7 +58,7 @@ final class CaptureHistoryManager {
         let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
-        ).first!
+        ).first ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Library/Application Support")
         capturesDirectory = appSupport
             .appendingPathComponent("OpenShot/Captures", isDirectory: true)
         thumbnailsDirectory = appSupport

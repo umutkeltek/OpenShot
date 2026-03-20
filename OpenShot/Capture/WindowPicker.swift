@@ -39,7 +39,10 @@ final class WindowPicker {
         }
 
         return await withCheckedContinuation { continuation in
+            var hasResumed = false
             let overlay = WindowPickerOverlay(windows: windows) { selected in
+                guard !hasResumed else { return }
+                hasResumed = true
                 continuation.resume(returning: selected)
             }
             overlay.show()

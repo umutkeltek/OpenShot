@@ -319,22 +319,19 @@ struct HistorySettingsTab: View {
             Section("Storage") {
                 LabeledContent("Captures folder") {
                     HStack {
-                        let capturesPath = FileManager.default.urls(
+                        let appSupport = FileManager.default.urls(
                             for: .applicationSupportDirectory,
                             in: .userDomainMask
-                        ).first!.appendingPathComponent("OpenShot/Captures").path(percentEncoded: false)
+                        ).first ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Library/Application Support")
+                        let capturesURL = appSupport.appendingPathComponent("OpenShot/Captures")
 
-                        Text(capturesPath)
+                        Text(capturesURL.path(percentEncoded: false))
                             .font(.caption)
                             .lineLimit(1)
                             .truncationMode(.middle)
 
                         Button("Reveal") {
-                            let url = FileManager.default.urls(
-                                for: .applicationSupportDirectory,
-                                in: .userDomainMask
-                            ).first!.appendingPathComponent("OpenShot/Captures")
-                            NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: url.path)
+                            NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: capturesURL.path)
                         }
                         .controlSize(.small)
                     }

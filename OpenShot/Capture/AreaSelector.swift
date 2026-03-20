@@ -85,12 +85,18 @@ final class AreaSelector: NSView {
         magnifier: Bool = true,
         frozenBackground: NSImage? = nil
     ) async -> CGRect? {
-        await withCheckedContinuation { continuation in
+        // Check screens BEFORE entering continuation to avoid double-resume
+        guard !NSScreen.screens.isEmpty else { return nil }
+
+        return await withCheckedContinuation { continuation in
+            var hasResumed = false
             let selector = AreaSelector()
             selector.crosshairEnabled = crosshair
             selector.magnifierEnabled = magnifier
             selector.frozenBackground = frozenBackground
             selector.completion = { rect in
+                guard !hasResumed else { return }
+                hasResumed = true
                 continuation.resume(returning: rect)
             }
             selector.showOnAllScreens()
