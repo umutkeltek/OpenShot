@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		056B5AD4DAFDDC21AF919151 /* OnboardingWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4ECE169A37B8487235C7CB4 /* OnboardingWindow.swift */; };
 		092142D3B8DE0F841D90C8A5 /* AnnotationCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA7EFEC4257867CBF081992 /* AnnotationCanvas.swift */; };
 		0B0D7A4718DA62020E45A8B8 /* HandDrawnStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15AEF866EBBC7EF207669DE /* HandDrawnStyle.swift */; };
 		17DF8B55D104A375256E1D2D /* OpenShotError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5DF9BFD4D71FA3CE482797 /* OpenShotError.swift */; };
@@ -39,6 +40,7 @@
 		AE7846648B43A1C1E586B92D /* SmartBlur.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED485B2142E971FC57AC815A /* SmartBlur.swift */; };
 		AEAB59D3812753532E06552F /* WindowPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBFC13EB139987FA2D3EE53 /* WindowPicker.swift */; };
 		B5E592A63C300EFA9B0DA9C6 /* GIFExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06FD6A8FE4A633C2F2AD967D /* GIFExporter.swift */; };
+		BA7E486FB4D203BA50F3260A /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522899B001BD987A082D199C /* LaunchAtLogin.swift */; };
 		BD8B08779E60E8062EAB72DF /* BlurTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D9D86C2A32AEAB183D0F10 /* BlurTool.swift */; };
 		C8E53379DB8244E9E1C607AF /* OCROverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD7E7ECB30E269820256BA40 /* OCROverlay.swift */; };
 		CC88FC960A5AA1BEDDF886DB /* AreaSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17BDAD8ADF644A28E4A6E96F /* AreaSelector.swift */; };
@@ -82,6 +84,7 @@
 		433B88401EAA6CF51BA45EED /* NSImage+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSImage+Extensions.swift"; sourceTree = "<group>"; };
 		4C3427C25DC77D5BF4DC4522 /* ScreenRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenRecorder.swift; sourceTree = "<group>"; };
 		4D5DF9BFD4D71FA3CE482797 /* OpenShotError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenShotError.swift; sourceTree = "<group>"; };
+		522899B001BD987A082D199C /* LaunchAtLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLogin.swift; sourceTree = "<group>"; };
 		56F8239CDA796428828D97FF /* AllInOnePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllInOnePanel.swift; sourceTree = "<group>"; };
 		5936900D6832C8A9AF9CB11B /* CaptureMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureMode.swift; sourceTree = "<group>"; };
 		5ACC727CCA500EF04E194244 /* OpenShotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OpenShotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -102,6 +105,7 @@
 		BA3B668C4DE267CC74E0B1E0 /* KeystrokeVisualizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeystrokeVisualizer.swift; sourceTree = "<group>"; };
 		BFE2035F107FEECDE81B72C5 /* ColorInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorInspector.swift; sourceTree = "<group>"; };
 		C0E38DCDEADFA5A2234A8F1E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C4ECE169A37B8487235C7CB4 /* OnboardingWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWindow.swift; sourceTree = "<group>"; };
 		C5575B577E5E2B85A81DD37B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		C5B577CB1AD7D247825B14D6 /* DragSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragSource.swift; sourceTree = "<group>"; };
 		C680F2E65D75E14CD2084467 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -274,6 +278,8 @@
 			isa = PBXGroup;
 			children = (
 				EFC0DCF156C2E06766DC4883 /* AppDelegate.swift */,
+				522899B001BD987A082D199C /* LaunchAtLogin.swift */,
+				C4ECE169A37B8487235C7CB4 /* OnboardingWindow.swift */,
 				CFBB2DA06CBA913BD03C1B86 /* OpenShotApp.swift */,
 				4D5DF9BFD4D71FA3CE482797 /* OpenShotError.swift */,
 				D1519EFA07E6BBC63EAB3F79 /* Permissions.swift */,
@@ -406,8 +412,10 @@
 				2A7D7E1C54C564E9B6283B46 /* HistoryView.swift in Sources */,
 				9899AE451D6E2739EB42E9BC /* HotkeyManager.swift in Sources */,
 				95FF7FFC442AF7D76401491B /* KeystrokeVisualizer.swift in Sources */,
+				BA7E486FB4D203BA50F3260A /* LaunchAtLogin.swift in Sources */,
 				7CEB11EB9D29480A1473F46C /* NSImage+Extensions.swift in Sources */,
 				C8E53379DB8244E9E1C607AF /* OCROverlay.swift in Sources */,
+				056B5AD4DAFDDC21AF919151 /* OnboardingWindow.swift in Sources */,
 				193C194733F5FF94B6878249 /* OpenShotApp.swift in Sources */,
 				17DF8B55D104A375256E1D2D /* OpenShotError.swift in Sources */,
 				E77B1380D2FB33FD803384C0 /* Permissions.swift in Sources */,

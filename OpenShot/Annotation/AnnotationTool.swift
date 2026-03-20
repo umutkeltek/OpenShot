@@ -710,6 +710,29 @@ class MagnifierAnnotation: BaseAnnotation {
     }
 }
 
+// MARK: - Image Annotation
+
+class ImageAnnotation: BaseAnnotation {
+    var image: NSImage
+
+    init(image: NSImage, at point: CGPoint) {
+        self.image = image
+        let size = image.size
+        super.init(bounds: CGRect(x: point.x, y: point.y, width: size.width, height: size.height))
+    }
+
+    override func draw(in context: CGContext) {
+        if let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+            // In flipped coordinate system, flip the image drawing within bounds
+            context.saveGState()
+            context.translateBy(x: bounds.origin.x, y: bounds.origin.y + bounds.height)
+            context.scaleBy(x: 1, y: -1)
+            context.draw(cgImage, in: CGRect(origin: .zero, size: bounds.size))
+            context.restoreGState()
+        }
+    }
+}
+
 // MARK: - Geometry Helpers
 
 /// Computes the distance from a point to a line segment defined by two endpoints.

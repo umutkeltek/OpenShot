@@ -8,6 +8,7 @@
 import AppKit
 import CoreImage
 import CoreImage.CIFilterBuiltins
+import UniformTypeIdentifiers
 import os
 
 private let logger = Logger(subsystem: "com.openshot.app", category: "AnnotationCanvas")
@@ -67,6 +68,7 @@ class AnnotationCanvas: NSView {
     private func commonInit() {
         wantsLayer = true
         layer?.backgroundColor = NSColor.black.cgColor
+        registerForDraggedTypes([.fileURL, .tiff, .png])
     }
 
     // MARK: - Drawing
@@ -852,6 +854,54 @@ class AnnotationCanvas: NSView {
     /// Resets the counter value (e.g., when starting a new annotation session).
     func resetCounter() {
         counterValue = 1
+    }
+
+    // MARK: - Drag and Drop (Image Import)
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        let pasteboard = sender.draggingPasteboard
+
+        // Accept file URLs that point to images
+        if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [
+            .urlReadingContentsConformToTypes: [UTType.image.identifier]
+        ]) as? [URL], !urls.isEmpty {
+            return .copy
+        }
+
+        // Accept image data
+        if pasteboard.canReadObject(forClasses: [NSImage.self]) {
+            return .copy
+        }
+
+        return []
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let pasteboard = sender.draggingPasteboard
+        let location = convert(sender.draggingLocation, from: nil)
+
+        // Try file URL first
+        if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [
+            .urlReadingContentsConformToTypes: [UTType.image.identifier]
+        ]) as? [URL] {
+            for url in urls {
+                if let image = NSImage(contentsOf: url) {
+                    let annotation = ImageAnnotation(image: image, at: location)
+                    addAnnotation(annotation)
+                    return true
+                }
+            }
+        }
+
+        // Try image data
+        if let images = pasteboard.readObjects(forClasses: [NSImage.self]) as? [NSImage],
+           let image = images.first {
+            let annotation = ImageAnnotation(image: image, at: location)
+            addAnnotation(annotation)
+            return true
+        }
+
+        return false
     }
 
     // MARK: - Color Picker

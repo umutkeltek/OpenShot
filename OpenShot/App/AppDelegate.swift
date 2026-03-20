@@ -11,6 +11,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hotkeyManager = HotkeyManager.shared
     private let preferences = Preferences.shared
     private let logger = Logger(subsystem: "com.openshot.app", category: "AppDelegate")
+    private var recordingTimer: Timer?
+    private var recordingStartTime: Date?
 
     // MARK: - NSApplicationDelegate
 
@@ -20,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupNotificationObservers()
         hotkeyManager.registerAll()
         Permissions.ensureScreenRecording()
+        OnboardingWindowManager.showIfNeeded()
         logger.info("OpenShot launched successfully")
     }
 
@@ -31,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Status Bar
 
     private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
             let image = NSImage(systemSymbolName: "camera.fill", accessibilityDescription: "OpenShot")
@@ -411,15 +414,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        NotificationCenter.default.addObserver(forName: .initRecordScreen, object: nil, queue: .main) { _ in
+        NotificationCenter.default.addObserver(forName: .initRecordScreen, object: nil, queue: .main) { [weak self] _ in
+            guard let self else { return }
             Task { @MainActor in
-                do {
-                    let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
-                    guard let display = content.displays.first else { return }
-                    let filter = SCContentFilter(display: display, excludingWindows: [])
-                    try await ScreenRecorder.shared.startRecording(filter: filter)
-                } catch {
-                    Logger(subsystem: "com.openshot", category: "recorder").error("Recording failed: \(error.localizedDescription)")
+                if ScreenRecorder.shared.isRecording {
+                    // Stop recording
+                    do {
+                        let url = try await ScreenRecorder.shared.stopRecording()
+                        self.stopRecordingUI()
+                        self.logger.info("Recording saved to \(url.path)")
+                    } catch {
+                        self.stopRecordingUI()
+                        Logger(subsystem: "com.openshot", category: "recorder").error("Stop recording failed: \(error.localizedDescription)")
+                    }
+                } else {
+                    // Start recording
+                    do {
+                        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+                        guard let display = content.displays.first else { return }
+                        let filter = SCContentFilter(display: display, excludingWindows: [])
+                        try await ScreenRecorder.shared.startRecording(filter: filter)
+                        self.startRecordingUI()
+                    } catch {
+                        Logger(subsystem: "com.openshot", category: "recorder").error("Recording failed: \(error.localizedDescription)")
+                    }
                 }
             }
         }
@@ -441,6 +459,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(forName: .showCaptureHistory, object: nil, queue: .main) { [weak self] _ in
             self?.openHistoryWindow()
         }
+    }
+
+    // MARK: - Recording UI
+
+    private func startRecordingUI() {
+        recordingStartTime = Date()
+        recordingTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self, let start = self.recordingStartTime else { return }
+            let elapsed = Int(Date().timeIntervalSince(start))
+            let minutes = elapsed / 60
+            let seconds = elapsed % 60
+            let timeString = String(format: "%02d:%02d", minutes, seconds)
+            DispatchQueue.main.async {
+                self.statusItem.button?.title = " \(timeString)"
+            }
+        }
+    }
+
+    private func stopRecordingUI() {
+        recordingTimer?.invalidate()
+        recordingTimer = nil
+        recordingStartTime = nil
+        statusItem.button?.title = ""
     }
 
     // MARK: - History Window

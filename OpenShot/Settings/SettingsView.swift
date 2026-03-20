@@ -42,7 +42,10 @@ struct GeneralSettingsTab: View {
     var body: some View {
         Form {
             Section("Startup") {
-                Toggle("Launch at Login", isOn: $preferences.launchAtLogin)
+                Toggle("Launch at Login", isOn: Binding(
+                    get: { LaunchAtLogin.isEnabled },
+                    set: { LaunchAtLogin.update(enabled: $0) }
+                ))
             }
 
             Section("Sound") {

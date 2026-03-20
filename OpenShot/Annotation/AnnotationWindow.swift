@@ -291,8 +291,19 @@ final class AnnotationWindow: NSWindow {
         }
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
+
+        // Write image data (TIFF) for apps that accept image paste
         pasteboard.writeObjects([composited])
-        logger.info("Annotated image copied to clipboard")
+
+        // Also write a temp file URL for apps that accept file URLs
+        if let pngData = composited.pngData() {
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("OpenShot_clipboard_\(UUID().uuidString).png")
+            try? pngData.write(to: tempURL)
+            pasteboard.setString(tempURL.absoluteString, forType: .fileURL)
+        }
+
+        logger.info("Annotated image copied to clipboard (image + file URL)")
     }
 
     private func resetAnnotations() {

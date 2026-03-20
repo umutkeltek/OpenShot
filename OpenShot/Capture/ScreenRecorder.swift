@@ -194,6 +194,9 @@ final class ScreenRecorder: NSObject, SCStreamOutput, @unchecked Sendable {
             await MainActor.run { keystrokeVisualizer.start() }
         }
 
+        // Enable DND during recording
+        DNDManager.enableDND()
+
         logger.info("Recording started: \(pixelWidth)x\(pixelHeight) @ \(fps) FPS, audio: \(includeAudio)")
     }
 
@@ -249,11 +252,12 @@ final class ScreenRecorder: NSObject, SCStreamOutput, @unchecked Sendable {
             throw OpenShotError.assetWriterFailed("No output URL available")
         }
 
-        // Stop visualizers
+        // Stop visualizers and restore DND
         await MainActor.run {
             clickVisualizer.stop()
             keystrokeVisualizer.stop()
         }
+        DNDManager.disableDND()
 
         // Reset state
         await MainActor.run {
@@ -297,11 +301,12 @@ final class ScreenRecorder: NSObject, SCStreamOutput, @unchecked Sendable {
         // Cancel the asset writer (discard partial data)
         assetWriter?.cancelWriting()
 
-        // Stop visualizers
+        // Stop visualizers and restore DND
         await MainActor.run {
             clickVisualizer.stop()
             keystrokeVisualizer.stop()
         }
+        DNDManager.disableDND()
 
         // Delete the partial output file
         if let url = outputURL {

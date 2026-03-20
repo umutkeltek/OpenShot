@@ -175,8 +175,19 @@ final class QuickAccessOverlay {
     func copyToClipboard() {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
+
+        // Write image data (TIFF) for apps that accept image paste
         pasteboard.writeObjects([capturedImage])
-        logger.info("Image copied to clipboard")
+
+        // Also write a temp file URL for apps that accept file URLs
+        if let pngData = capturedImage.pngData() {
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("OpenShot_clipboard_\(UUID().uuidString).png")
+            try? pngData.write(to: tempURL)
+            pasteboard.setString(tempURL.absoluteString, forType: .fileURL)
+        }
+
+        logger.info("Image copied to clipboard (image + file URL)")
         dismiss()
     }
 
