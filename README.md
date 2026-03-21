@@ -193,12 +193,32 @@ openshot://restore-recently-closed
 | MP4 | `.mp4` (recordings) |
 | GIF | `.gif` (GIF recordings) |
 
-## License
+## Documentation
 
-MIT — do whatever you want with it.
+| Document | Description |
+|----------|-------------|
+| [Architecture](docs/ARCHITECTURE.md) | Module breakdown, data flow, design decisions |
+| [Development Guide](docs/DEVELOPMENT.md) | Setup, building, testing, debugging |
+| [Contributing](CONTRIBUTING.md) | How to report bugs, suggest features, submit PRs |
+| [Code of Conduct](CODE_OF_CONDUCT.md) | Community standards |
+| [Security Policy](SECURITY.md) | Reporting vulnerabilities |
+| [Changelog](CHANGELOG.md) | Release history |
 
 ## Contributing
 
-PRs welcome. Please open an issue first for major changes.
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+```bash
+# Quick start
+git clone https://github.com/umutkeltek/OpenShot.git
+cd OpenShot
+make build    # Build
+make test     # Run tests
+make run      # Build and launch
+```
+
+## License
+
+[MIT](LICENSE) — do whatever you want with it.
 
 Built with Swift and Apple frameworks. No subscriptions, no cloud, no tracking.

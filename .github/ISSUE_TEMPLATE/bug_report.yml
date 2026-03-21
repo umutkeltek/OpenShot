@@ -1,0 +1,100 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the details below so we can reproduce and fix it.
+
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS Version
+      description: "e.g. macOS 14.3 Sonoma"
+      placeholder: "macOS 14.x"
+    validations:
+      required: true
+
+  - type: input
+    id: openshot-version
+    attributes:
+      label: OpenShot Version
+      description: "Found in the menu bar icon > About"
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: capture-mode
+    attributes:
+      label: Which feature is affected?
+      options:
+        - Area Capture
+        - Window Capture
+        - Fullscreen Capture
+        - Scrolling Capture
+        - Screen Recording (MP4)
+        - GIF Recording
+        - Annotation Editor
+        - OCR / Text Capture
+        - Quick Access Overlay
+        - Floating Screenshots
+        - Settings / Preferences
+        - Hotkeys
+        - Menu Bar
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: "When I try to capture an area, the selection box doesn't appear..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: What should have happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to trigger the bug.
+      placeholder: |
+        1. Open OpenShot from menu bar
+        2. Press Shift+Cmd+4
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / screen recordings
+      description: If applicable, add screenshots or recordings to help explain the problem.
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console logs
+      description: |
+        If relevant, paste logs from Console.app (filter by "OpenShot").
+      render: shell
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues to make sure this isn't a duplicate
+          required: true
