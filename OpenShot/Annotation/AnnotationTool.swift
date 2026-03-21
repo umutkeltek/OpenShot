@@ -38,6 +38,38 @@ enum AnnotationToolType: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Single-key shortcut for quick tool switching.
+    /// Returns nil for tools that don't have a shortcut.
+    var keyboardShortcut: Character? {
+        switch self {
+        case .arrow: return "a"
+        case .rectangle: return "r"
+        case .ellipse: return "e"
+        case .line: return "l"
+        case .text: return "t"
+        case .counter: return "n"
+        case .pencil: return "p"
+        case .highlighter: return "h"
+        case .blur: return "b"
+        case .pixelate: return "x"
+        case .spotlight: return "s"
+        case .crop: return "c"
+        case .blackOut: return "k"
+        case .smartBlur: return nil
+        case .ruler: return nil
+        case .colorPicker: return nil
+        case .magnifier: return "m"
+        }
+    }
+
+    /// Display name with keyboard shortcut hint for tooltips.
+    var displayNameWithShortcut: String {
+        if let key = keyboardShortcut {
+            return "\(displayName) (\(key.uppercased()))"
+        }
+        return displayName
+    }
+
     var systemImage: String {
         switch self {
         case .arrow: return "arrow.up.right"

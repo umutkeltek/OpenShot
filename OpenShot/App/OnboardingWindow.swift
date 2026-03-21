@@ -77,6 +77,8 @@ struct OnboardingView: View {
                 Permissions.requestScreenRecording()
             }
             .buttonStyle(.bordered)
+            .accessibilityLabel("Grant screen recording permission")
+            .accessibilityHint("Opens the macOS system dialog to grant screen recording access")
             Spacer()
         }
     }
@@ -153,6 +155,7 @@ struct OnboardingWindowManager {
         window.title = "Welcome to OpenShot"
         window.styleMask = [.titled, .closable]
         window.setContentSize(NSSize(width: 520, height: 420))
+        window.minSize = NSSize(width: 520, height: 420)
         window.center()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

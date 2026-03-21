@@ -198,12 +198,39 @@ final class FloatingScreenshot: NSPanel {
         case 53: // Escape
             close()
             return
+        case 37 where event.modifierFlags.contains(.command): // Cmd+L
+            toggleLockViaKeyboard()
+            return
         default:
             super.keyDown(with: event)
             return
         }
 
         setFrameOrigin(origin)
+    }
+
+    // MARK: - Keyboard Lock Toggle
+
+    private func toggleLockViaKeyboard() {
+        isLocked.toggle()
+
+        if isLocked {
+            self.ignoresMouseEvents = true
+            self.isMovableByWindowBackground = false
+            self.contentView?.wantsLayer = true
+            self.contentView?.layer?.borderWidth = 2
+            self.contentView?.layer?.borderColor = NSColor.systemRed.withAlphaComponent(0.5).cgColor
+            logger.info("Floating screenshot locked via Cmd+L")
+        } else {
+            self.ignoresMouseEvents = false
+            self.isMovableByWindowBackground = true
+            self.contentView?.layer?.borderWidth = 0
+            self.contentView?.layer?.borderColor = nil
+            logger.info("Floating screenshot unlocked via Cmd+L")
+        }
+
+        // Update title to reflect state.
+        self.title = isLocked ? "OpenShot — Pinned (Locked)" : "OpenShot — Pinned"
     }
 
     // MARK: - Context Menu Actions

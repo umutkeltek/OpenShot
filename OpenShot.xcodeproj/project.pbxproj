@@ -18,6 +18,7 @@
 		229DAC2EDD745AAEAD5E45D5 /* DesktopManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835740B9786FE2A1BC93E98E /* DesktopManager.swift */; };
 		22B44AAFAD9BB4D62EF1D270 /* CaptureMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5936900D6832C8A9AF9CB11B /* CaptureMode.swift */; };
 		27C0B8BCC47A3FBAEE2EC7D4 /* QuickAccessOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132565A3EEB580D27B4D25B6 /* QuickAccessOverlay.swift */; };
+		295DFB2EB1B45A5431FAE4C9 /* AlertHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA116136F48BAB4EA9AFDB5C /* AlertHelper.swift */; };
 		2A7D7E1C54C564E9B6283B46 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3167196B2EA39F4B82527BA /* HistoryView.swift */; };
 		2E42852F49710AF91699EA2F /* URLSchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229A9E82F7A5B52C6A7A0A5D /* URLSchemeHandler.swift */; };
 		453CC37BBC28DD0F8272075D /* AnnotationToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3594F43F878C519A38D55B46 /* AnnotationToolbar.swift */; };
@@ -27,6 +28,7 @@
 		4EC65CA6DD39B6CEA3DF367C /* AllInOnePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F8239CDA796428828D97FF /* AllInOnePanel.swift */; };
 		550B87CDD4C705A2F27319ED /* FileNamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E35AC3510A3658BCB363699D /* FileNamer.swift */; };
 		5C6CE483E89B62B351721915 /* Preferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97CAA46728FA03361260DEE7 /* Preferences.swift */; };
+		6C4B50432CD1B5A79D8382A6 /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 483623546E0588C4266EA416 /* ToastView.swift */; };
 		6D9E01ECF221CAB18321D604 /* AnnotationTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A3EB9DAF4279D51EFB1743 /* AnnotationTool.swift */; };
 		6ED238729E0FCF5A3CB452AA /* FloatingScreenshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = D14E6535C885FA762BF87B20 /* FloatingScreenshot.swift */; };
 		71015901367BB4110B87F531 /* RecordingControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ED006B43B2CBCC3236E6D80 /* RecordingControls.swift */; };
@@ -82,6 +84,7 @@
 		3D1E6AA28C2BA963CDBBC09C /* DNDManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DNDManager.swift; sourceTree = "<group>"; };
 		3E9355FF95FE4FF1BAAAF8E3 /* PixelRuler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelRuler.swift; sourceTree = "<group>"; };
 		433B88401EAA6CF51BA45EED /* NSImage+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSImage+Extensions.swift"; sourceTree = "<group>"; };
+		483623546E0588C4266EA416 /* ToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastView.swift; sourceTree = "<group>"; };
 		4C3427C25DC77D5BF4DC4522 /* ScreenRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenRecorder.swift; sourceTree = "<group>"; };
 		4D5DF9BFD4D71FA3CE482797 /* OpenShotError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenShotError.swift; sourceTree = "<group>"; };
 		522899B001BD987A082D199C /* LaunchAtLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLogin.swift; sourceTree = "<group>"; };
@@ -100,6 +103,7 @@
 		9A4310BF6774512BF5CFAA8E /* SelfTimerOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfTimerOverlay.swift; sourceTree = "<group>"; };
 		A1A3EB9DAF4279D51EFB1743 /* AnnotationTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationTool.swift; sourceTree = "<group>"; };
 		A9BCD93AF318D7E83AEA675E /* WindowBackgroundRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowBackgroundRenderer.swift; sourceTree = "<group>"; };
+		AA116136F48BAB4EA9AFDB5C /* AlertHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertHelper.swift; sourceTree = "<group>"; };
 		AC0F0AB80EDA27B45C436273 /* TextRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextRecognizer.swift; sourceTree = "<group>"; };
 		B15AEF866EBBC7EF207669DE /* HandDrawnStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandDrawnStyle.swift; sourceTree = "<group>"; };
 		BA3B668C4DE267CC74E0B1E0 /* KeystrokeVisualizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeystrokeVisualizer.swift; sourceTree = "<group>"; };
@@ -136,6 +140,7 @@
 		3444B0D2D53689EE3C4D78BB /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				AA116136F48BAB4EA9AFDB5C /* AlertHelper.swift */,
 				BFE2035F107FEECDE81B72C5 /* ColorInspector.swift */,
 				835740B9786FE2A1BC93E98E /* DesktopManager.swift */,
 				3D1E6AA28C2BA963CDBBC09C /* DNDManager.swift */,
@@ -143,6 +148,7 @@
 				433B88401EAA6CF51BA45EED /* NSImage+Extensions.swift */,
 				5B3B97950EE1BD4EA2B04394 /* ScreenInfo.swift */,
 				963CCE0E949CDAB778B99A3F /* SoundEffects.swift */,
+				483623546E0588C4266EA416 /* ToastView.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -389,6 +395,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				295DFB2EB1B45A5431FAE4C9 /* AlertHelper.swift in Sources */,
 				4EC65CA6DD39B6CEA3DF367C /* AllInOnePanel.swift in Sources */,
 				092142D3B8DE0F841D90C8A5 /* AnnotationCanvas.swift in Sources */,
 				6D9E01ECF221CAB18321D604 /* AnnotationTool.swift in Sources */,
@@ -431,6 +438,7 @@
 				DC90A5F4A530B70E443EB5B1 /* SoundEffects.swift in Sources */,
 				F473DF3CBB280F48C31EBB55 /* TextAnnotation.swift in Sources */,
 				F7F647EAD267BE409082CA90 /* TextRecognizer.swift in Sources */,
+				6C4B50432CD1B5A79D8382A6 /* ToastView.swift in Sources */,
 				2E42852F49710AF91699EA2F /* URLSchemeHandler.swift in Sources */,
 				1D93C6EAD1EA0887D64D1282 /* VideoEditor.swift in Sources */,
 				E86DBDB7ABA3A93D4C835440 /* WebcamOverlay.swift in Sources */,
@@ -455,6 +463,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -579,6 +588,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

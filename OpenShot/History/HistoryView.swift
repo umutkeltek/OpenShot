@@ -86,6 +86,7 @@ struct HistoryView: View {
             }
             .pickerStyle(.segmented)
             .frame(maxWidth: 400)
+            .accessibilityLabel("Filter captures by type")
 
             Spacer()
 
@@ -156,6 +157,11 @@ struct HistoryView: View {
         Button("Reveal in Finder") {
             revealInFinder(record)
         }
+        if record.captureType == "screenshot" {
+            Button("Annotate") {
+                annotateRecord(record)
+            }
+        }
         Divider()
         Button("Delete", role: .destructive) {
             deleteRecord(record)
@@ -184,6 +190,12 @@ struct HistoryView: View {
         )
     }
 
+    private func annotateRecord(_ record: CaptureRecord) {
+        if let image = NSImage(contentsOfFile: record.filePath) {
+            AnnotationWindow.show(with: image)
+        }
+    }
+
     private func deleteRecord(_ record: CaptureRecord) {
         try? CaptureHistoryManager.shared.deleteRecord(
             record,
@@ -200,6 +212,7 @@ struct HistoryView: View {
 struct CaptureCell: View {
     let record: CaptureRecord
     var isSelected: Bool = false
+    @State private var isHovering = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -218,6 +231,12 @@ struct CaptureCell: View {
                     lineWidth: 2
                 )
         )
+        .scaleEffect(isHovering ? 1.02 : 1.0)
+        .shadow(color: .black.opacity(isHovering ? 0.15 : 0), radius: 4, x: 0, y: 2)
+        .animation(.easeInOut(duration: 0.2), value: isHovering)
+        .onHover { hovering in
+            isHovering = hovering
+        }
     }
 
     // MARK: Thumbnail

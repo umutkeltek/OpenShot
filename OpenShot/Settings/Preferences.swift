@@ -32,6 +32,7 @@ final class Preferences {
         static let showKeystrokes = "pref_showKeystrokes"
         static let historyRetentionDays = "pref_historyRetentionDays"
         static let launchAtLogin = "pref_launchAtLogin"
+        static let playRecordingSounds = "pref_playRecordingSounds"
     }
 
     // MARK: - Nested Enums
@@ -298,6 +299,16 @@ final class Preferences {
     var launchAtLogin: Bool {
         get { defaults.bool(forKey: Keys.launchAtLogin) }
         set { defaults.set(newValue, forKey: Keys.launchAtLogin) }
+    }
+
+    var playRecordingSounds: Bool {
+        get {
+            if defaults.object(forKey: Keys.playRecordingSounds) == nil { return true }
+            return defaults.bool(forKey: Keys.playRecordingSounds)
+        }
+        set {
+            defaults.set(newValue, forKey: Keys.playRecordingSounds)
+        }
     }
 
     var fileNamingTemplate: String {

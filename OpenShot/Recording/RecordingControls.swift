@@ -62,6 +62,7 @@ struct RecordingControlsView: View {
             }
             .buttonStyle(.plain)
             .help(recorder.isPaused ? "Resume Recording" : "Pause Recording")
+            .accessibilityLabel(recorder.isPaused ? "Resume recording" : "Pause recording")
 
             // Restart button
             if let onRestart {
@@ -74,6 +75,7 @@ struct RecordingControlsView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Restart Recording")
+                .accessibilityLabel("Restart recording from the beginning")
             }
 
             // Stop button
@@ -86,6 +88,7 @@ struct RecordingControlsView: View {
             }
             .buttonStyle(.plain)
             .help("Stop Recording")
+            .accessibilityLabel("Stop and save recording")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)

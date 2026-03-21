@@ -50,6 +50,7 @@ struct GeneralSettingsTab: View {
 
             Section("Sound") {
                 Toggle("Play capture sound", isOn: $preferences.captureSound)
+                    .accessibilityHint("Plays a shutter sound when a screenshot is captured")
             }
 
             Section("Save Location") {
@@ -68,6 +69,7 @@ struct GeneralSettingsTab: View {
                             preferences.saveLocation = url
                         }
                     }
+                    .accessibilityLabel("Choose save location folder")
                 }
             }
 
@@ -92,6 +94,7 @@ struct GeneralSettingsTab: View {
 
             Section("Desktop") {
                 Toggle("Hide Desktop Icons During Capture", isOn: $preferences.hideDesktopIconsDuringCapture)
+                    .accessibilityHint("Temporarily hides desktop icons while taking a screenshot")
             }
 
             Section("File Naming") {
@@ -124,7 +127,9 @@ struct CaptureSettingsTab: View {
         Form {
             Section("Crosshair & Magnifier") {
                 Toggle("Show crosshair during selection", isOn: $preferences.showCrosshair)
+                    .accessibilityHint("Shows a crosshair cursor during area selection")
                 Toggle("Show magnifier during selection", isOn: $preferences.showMagnifier)
+                    .accessibilityHint("Shows a zoomed pixel magnifier during area selection")
             }
 
             Section("Screen Freeze") {
@@ -215,9 +220,16 @@ struct RecordingSettingsTab: View {
                 }
             }
 
+            Section("Sound") {
+                Toggle("Play recording state sounds", isOn: $preferences.playRecordingSounds)
+                    .accessibilityHint("Plays sounds when recording starts, stops, or pauses")
+            }
+
             Section("Overlays") {
                 Toggle("Show mouse clicks", isOn: $preferences.showClicks)
+                    .accessibilityHint("Shows visual circles on mouse clicks during recording")
                 Toggle("Show keystrokes", isOn: $preferences.showKeystrokes)
+                    .accessibilityHint("Shows pressed keys in a floating pill during recording")
             }
         }
         .padding()

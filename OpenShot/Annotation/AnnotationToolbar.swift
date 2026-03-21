@@ -49,6 +49,7 @@ struct AnnotationToolbar: View {
                 ColorPicker("", selection: $selectedColor)
                     .labelsHidden()
                     .frame(width: 24)
+                    .accessibilityLabel("Custom color picker")
                     .onChange(of: selectedColor) { _, newValue in
                         canvas.currentColor = NSColor(newValue)
                     }
@@ -89,9 +90,13 @@ struct AnnotationToolbar: View {
                     .background(selectedTool == tool ? Color.accentColor.opacity(0.8) : Color.clear)
                     .foregroundStyle(selectedTool == tool ? .white : .primary)
                     .cornerRadius(6)
+                    .animation(.easeInOut(duration: 0.15), value: selectedTool)
             }
             .buttonStyle(.plain)
-            .help(tool.displayName)
+            .help(tool.displayNameWithShortcut)
+            .accessibilityLabel("\(tool.displayName) tool")
+            .accessibilityHint("Select the \(tool.displayName.lowercased()) annotation tool")
+            .accessibilityAddTraits(selectedTool == tool ? .isSelected : [])
         }
     }
 
@@ -125,6 +130,8 @@ struct AnnotationToolbar: View {
                 .foregroundStyle(.secondary)
             Slider(value: $strokeWidth, in: 1...20, step: 1)
                 .frame(width: 80)
+                .accessibilityLabel("Stroke width")
+                .accessibilityValue("\(Int(strokeWidth)) pixels")
                 .onChange(of: strokeWidth) { _, newValue in
                     canvas.currentStrokeWidth = CGFloat(newValue)
                 }
@@ -147,6 +154,7 @@ struct AnnotationToolbar: View {
         }
         .buttonStyle(.plain)
         .help("Undo")
+        .accessibilityLabel("Undo last annotation")
 
         Button {
             canvas.performRedo()
@@ -156,6 +164,7 @@ struct AnnotationToolbar: View {
         }
         .buttonStyle(.plain)
         .help("Redo")
+        .accessibilityLabel("Redo annotation")
     }
 
     // MARK: - Action Buttons

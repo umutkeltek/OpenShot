@@ -3,7 +3,7 @@ import SwiftUI
 import ScreenCaptureKit
 import os
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: - Properties
 
@@ -13,6 +13,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let logger = Logger(subsystem: "com.openshot.app", category: "AppDelegate")
     private var recordingTimer: Timer?
     private var recordingStartTime: Date?
+
+    // Menu items that need dynamic enable/disable
+    private var restoreItem: NSMenuItem?
+    private var recordScreenItem: NSMenuItem?
 
     // MARK: - NSApplicationDelegate
 
@@ -51,6 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func buildMenu() -> NSMenu {
         let menu = NSMenu()
+        menu.delegate = self
 
         let captureAreaItem = NSMenuItem(
             title: "Capture Area",
@@ -140,13 +145,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
-        let restoreItem = NSMenuItem(
+        let restoreMenuItem = NSMenuItem(
             title: "Restore Recently Closed",
             action: #selector(restoreRecentlyClosed),
             keyEquivalent: "Z"
         )
-        restoreItem.keyEquivalentModifierMask = [.shift, .command]
-        menu.addItem(restoreItem)
+        restoreMenuItem.keyEquivalentModifierMask = [.shift, .command]
+        menu.addItem(restoreMenuItem)
+        self.restoreItem = restoreMenuItem
 
         let toggleDesktopItem = NSMenuItem(
             title: "Toggle Desktop Icons",
@@ -184,6 +190,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(quitItem)
 
         return menu
+    }
+
+    // MARK: - NSMenuDelegate
+
+    func menuWillOpen(_ menu: NSMenu) {
+        // Dynamically enable/disable menu items based on current state.
+        restoreItem?.isEnabled = QuickAccessOverlay.lastDismissedImage != nil
     }
 
     // MARK: - Hotkey Callbacks
@@ -327,6 +340,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 CaptureEngine.shared.presentResult(image)
             } catch {
                 logger.warning("Capture Previous Area failed: \(error.localizedDescription)")
+                if let osError = error as? OpenShotError {
+                    AlertHelper.showError(osError)
+                }
             }
         }
     }
@@ -343,6 +359,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 CaptureEngine.shared.presentResult(image)
             } catch {
                 logger.warning("Self-Timer Capture failed: \(error.localizedDescription)")
+                if let osError = error as? OpenShotError {
+                    AlertHelper.showError(osError)
+                }
             }
         }
     }
@@ -420,6 +439,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 } catch {
                     if case CaptureEngineError.cancelled = error { return }
                     Logger(subsystem: "com.openshot", category: "capture").error("Capture failed: \(error.localizedDescription)")
+                    if let osError = error as? OpenShotError {
+                        AlertHelper.showError(osError)
+                    } else {
+                        AlertHelper.showGenericError(title: "Capture Failed", message: error.localizedDescription)
+                    }
                 }
             }
         }
@@ -432,10 +456,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     do {
                         let url = try await ScreenRecorder.shared.stopRecording()
                         self.stopRecordingUI()
+                        SoundEffects.playRecordingStop()
                         self.logger.info("Recording saved to \(url.path)")
+                        ToastManager.show(icon: "checkmark.circle.fill", message: "Recording saved", detail: url.lastPathComponent)
                     } catch {
                         self.stopRecordingUI()
                         Logger(subsystem: "com.openshot", category: "recorder").error("Stop recording failed: \(error.localizedDescription)")
+                        AlertHelper.showGenericError(title: "Recording Failed", message: error.localizedDescription)
                     }
                 } else {
                     // Start recording
@@ -445,8 +472,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         let filter = SCContentFilter(display: display, excludingWindows: [])
                         try await ScreenRecorder.shared.startRecording(filter: filter)
                         self.startRecordingUI()
+                        SoundEffects.playRecordingStart()
                     } catch {
                         Logger(subsystem: "com.openshot", category: "recorder").error("Recording failed: \(error.localizedDescription)")
+                        AlertHelper.showGenericError(title: "Recording Failed", message: error.localizedDescription)
                     }
                 }
             }
@@ -501,6 +530,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let window = NSWindow(contentViewController: hostingController)
         window.title = "Capture History"
         window.setContentSize(NSSize(width: 700, height: 500))
+        window.minSize = NSSize(width: 400, height: 300)
+        window.setFrameAutosaveName("OpenShot.History")
         window.center()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

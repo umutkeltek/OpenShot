@@ -89,7 +89,7 @@ class AllInOnePanel {
             styleMask: [.nonactivatingPanel, .titled, .closable, .hudWindow],
             backing: .buffered, defer: false
         )
-        p.title = "OpenShot"
+        p.title = "OpenShot — Capture Modes"
         p.level = .floating
         p.isMovableByWindowBackground = true
         p.contentView = hostingView

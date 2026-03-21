@@ -186,6 +186,9 @@ final class QuickAccessOverlay {
         }
 
         logger.info("Image copied to clipboard (image + file URL)")
+        Task { @MainActor in
+            ToastManager.show(icon: "checkmark.circle.fill", message: "Copied to clipboard")
+        }
         dismiss()
     }
 
@@ -239,11 +242,21 @@ final class QuickAccessOverlay {
             try FileManager.default.createDirectory(at: saveURL, withIntermediateDirectories: true)
             try data.write(to: fileURL)
             logger.info("Screenshot saved to \(fileURL.path)")
+            Task { @MainActor in
+                ToastManager.show(
+                    icon: "checkmark.circle.fill",
+                    message: "Saved",
+                    detail: fileURL.path
+                )
+            }
 
             // Reveal in Finder.
             NSWorkspace.shared.activateFileViewerSelecting([fileURL])
         } catch {
             logger.error("Failed to save screenshot: \(error.localizedDescription)")
+            Task { @MainActor in
+                AlertHelper.showGenericError(title: "Save Failed", message: error.localizedDescription)
+            }
         }
 
         dismiss()
@@ -307,6 +320,11 @@ struct QuickAccessOverlayView: View {
     let onClose: () -> Void
 
     @State private var isHovering = false
+    @State private var countdownProgress: CGFloat = 1.0
+
+    private var autoCloseDelay: TimeInterval {
+        Preferences.shared.overlayAutoCloseDelay
+    }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -328,6 +346,17 @@ struct QuickAccessOverlayView: View {
                 OverlayButton(icon: "pin", label: "Pin", action: onPin)
                 OverlayButton(icon: "xmark", label: "Close", action: onClose)
             }
+
+            // Auto-close countdown bar
+            if autoCloseDelay > 0 {
+                GeometryReader { geo in
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(Color.secondary.opacity(0.3))
+                        .frame(width: geo.size.width * countdownProgress, height: 3)
+                }
+                .frame(height: 3)
+                .clipShape(RoundedRectangle(cornerRadius: 1.5))
+            }
         }
         .padding(12)
         .background(.ultraThinMaterial)
@@ -335,6 +364,22 @@ struct QuickAccessOverlayView: View {
         .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
         .onHover { hovering in
             isHovering = hovering
+            if hovering {
+                // Pause countdown animation
+                countdownProgress = countdownProgress // freeze current
+            } else {
+                // Resume countdown from current position
+                withAnimation(.linear(duration: autoCloseDelay * Double(countdownProgress))) {
+                    countdownProgress = 0
+                }
+            }
+        }
+        .onAppear {
+            if autoCloseDelay > 0 {
+                withAnimation(.linear(duration: autoCloseDelay)) {
+                    countdownProgress = 0
+                }
+            }
         }
     }
 }
@@ -368,6 +413,7 @@ struct OverlayButton: View {
     let action: () -> Void
 
     @State private var isHovering = false
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         Button(action: action) {
@@ -381,11 +427,41 @@ struct OverlayButton: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .focused($isFocused)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isFocused ? Color.accentColor : .clear, lineWidth: 2)
+                .animation(.easeInOut(duration: 0.15), value: isFocused)
+        )
         .foregroundStyle(isHovering ? .primary : .secondary)
         .scaleEffect(isHovering ? 1.1 : 1.0)
         .animation(.easeInOut(duration: 0.15), value: isHovering)
         .onHover { hovering in
             isHovering = hovering
+        }
+        .accessibilityLabel(accessibilityName)
+        .accessibilityHint(accessibilityHintText)
+    }
+
+    private var accessibilityName: String {
+        switch label {
+        case "Copy": return "Copy screenshot to clipboard"
+        case "Save": return "Save screenshot to file"
+        case "Annotate": return "Open annotation editor"
+        case "Pin": return "Pin as floating screenshot"
+        case "Close": return "Dismiss overlay"
+        default: return label
+        }
+    }
+
+    private var accessibilityHintText: String {
+        switch label {
+        case "Copy": return "Copies the captured image and a temporary file URL to the clipboard"
+        case "Save": return "Saves the screenshot to your configured save location"
+        case "Annotate": return "Opens the annotation editor with drawing tools"
+        case "Pin": return "Creates an always-on-top floating window with this screenshot"
+        case "Close": return "Dismisses this overlay without taking any action"
+        default: return ""
         }
     }
 }

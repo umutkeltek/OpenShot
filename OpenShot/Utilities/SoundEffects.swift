@@ -44,4 +44,36 @@ struct SoundEffects {
         NSSound.beep()
         logger.debug("Played system beep as final fallback")
     }
+
+    // MARK: - Recording Sounds
+
+    /// Plays a sound when screen recording starts.
+    static func playRecordingStart() {
+        guard Preferences.shared.playRecordingSounds else { return }
+        if let sound = NSSound(named: "Blow") {
+            sound.play()
+        } else {
+            NSSound.beep()
+        }
+    }
+
+    /// Plays a sound when screen recording stops.
+    static func playRecordingStop() {
+        guard Preferences.shared.playRecordingSounds else { return }
+        if let sound = NSSound(named: "Bottle") {
+            sound.play()
+        } else {
+            NSSound.beep()
+        }
+    }
+
+    /// Plays a sound when screen recording is paused or resumed.
+    static func playRecordingPause() {
+        guard Preferences.shared.playRecordingSounds else { return }
+        if let sound = NSSound(named: "Pop") {
+            sound.play()
+        } else {
+            NSSound.beep()
+        }
+    }
 }
