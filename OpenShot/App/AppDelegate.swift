@@ -390,16 +390,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NotificationCenter.default.post(name: .showCaptureHistory, object: nil)
     }
 
-    @objc private func showSettings() {
-        // Must activate BEFORE showing settings — LSUIElement apps need this order
-        NSApp.activate(ignoringOtherApps: true)
+    private var settingsWindow: NSWindow?
 
-        // macOS 14+ uses "showSettingsWindow:", macOS 13 used "showPreferencesWindow:"
-        if #available(macOS 14, *) {
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        } else {
-            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+    @objc private func showSettings() {
+        // If settings window already exists, just bring it to front.
+        if let existing = settingsWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
         }
+
+        // Create the settings window directly instead of relying on
+        // sendAction("showSettingsWindow:") which is unreliable in
+        // LSUIElement (menu bar agent) apps.
+        let settingsView = SettingsView()
+        let hostingController = NSHostingController(rootView: settingsView)
+        let window = NSWindow(contentViewController: hostingController)
+        window.title = "OpenShot Settings"
+        window.styleMask = [.titled, .closable]
+        window.setContentSize(NSSize(width: 500, height: 400))
+        window.minSize = NSSize(width: 500, height: 400)
+        window.setFrameAutosaveName("OpenShot.Settings")
+        window.center()
+
+        self.settingsWindow = window
+
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
     }
 
     @objc private func quitApp() {
