@@ -11,6 +11,50 @@ import SwiftUI
 import os
 import UniformTypeIdentifiers
 
+fileprivate final class AutoCloseCountdownState {
+    private(set) var totalDuration: TimeInterval = 0
+    private(set) var remainingDuration: TimeInterval = 0
+    private var startedAt: Date?
+
+    func start(duration: TimeInterval, now: Date = Date()) {
+        totalDuration = duration
+        remainingDuration = duration
+        startedAt = now
+    }
+
+    func pause(now: Date = Date()) {
+        guard let startedAt else { return }
+        remainingDuration = max(0, remainingDuration - now.timeIntervalSince(startedAt))
+        self.startedAt = nil
+    }
+
+    func resume(now: Date = Date()) {
+        guard totalDuration > 0, remainingDuration > 0 else {
+            startedAt = nil
+            return
+        }
+
+        startedAt = now
+    }
+
+    func reset() {
+        totalDuration = 0
+        remainingDuration = 0
+        startedAt = nil
+    }
+
+    func progress(at date: Date = Date()) -> CGFloat {
+        guard totalDuration > 0 else { return 0 }
+        return CGFloat(remainingTime(at: date) / totalDuration)
+    }
+
+    func remainingTime(at date: Date = Date()) -> TimeInterval {
+        guard totalDuration > 0 else { return 0 }
+        guard let startedAt else { return remainingDuration }
+        return max(0, remainingDuration - date.timeIntervalSince(startedAt))
+    }
+}
+
 // MARK: - QuickAccessOverlay
 
 final class QuickAccessOverlay {
@@ -18,6 +62,7 @@ final class QuickAccessOverlay {
     private let logger = Logger(subsystem: "com.openshot", category: "overlay")
     private var panel: NSPanel?
     private var autoCloseTimer: Timer?
+    private let countdownState = AutoCloseCountdownState()
     private let capturedImage: NSImage
     private let preferences = Preferences.shared
 
@@ -38,10 +83,12 @@ final class QuickAccessOverlay {
         // Dismiss any existing overlay first.
         QuickAccessOverlay.activeOverlay?.dismiss()
         QuickAccessOverlay.activeOverlay = self
+        startAutoCloseTimer()
 
         let hostingView = NSHostingView(
             rootView: QuickAccessOverlayView(
                 image: capturedImage,
+                countdownState: countdownState,
                 onCopy: { [weak self] in self?.copyToClipboard() },
                 onSave: { [weak self] in self?.saveToFile() },
                 onAnnotate: { [weak self] in self?.openAnnotationEditor() },
@@ -74,11 +121,10 @@ final class QuickAccessOverlay {
         let trackingView = OverlayTrackingView(frame: NSRect(origin: .zero, size: fittingSize))
         trackingView.addSubview(hostingView)
         trackingView.onMouseEntered = { [weak self] in
-            self?.autoCloseTimer?.invalidate()
-            self?.autoCloseTimer = nil
+            self?.pauseAutoCloseTimer()
         }
         trackingView.onMouseExited = { [weak self] in
-            self?.startAutoCloseTimer()
+            self?.resumeAutoCloseTimer()
         }
         overlayPanel.contentView = trackingView
 
@@ -89,9 +135,6 @@ final class QuickAccessOverlay {
         self.panel = overlayPanel
 
         logger.info("Quick access overlay shown")
-
-        // Start auto-close timer.
-        startAutoCloseTimer()
     }
 
     // MARK: - Dismiss
@@ -99,6 +142,7 @@ final class QuickAccessOverlay {
     func dismiss() {
         autoCloseTimer?.invalidate()
         autoCloseTimer = nil
+        countdownState.reset()
 
         // Store the image before clearing so it can be restored later.
         QuickAccessOverlay.lastDismissedImage = capturedImage
@@ -160,9 +204,40 @@ final class QuickAccessOverlay {
     // MARK: - Auto-Close Timer
 
     private func startAutoCloseTimer() {
-        autoCloseTimer?.invalidate()
         let delay = preferences.overlayAutoCloseDelay
-        guard delay > 0 else { return } // 0 means "Never"
+        guard delay > 0 else {
+            autoCloseTimer?.invalidate()
+            autoCloseTimer = nil
+            countdownState.reset()
+            return
+        }
+
+        countdownState.start(duration: delay)
+        scheduleAutoCloseTimer(after: delay)
+    }
+
+    private func pauseAutoCloseTimer() {
+        guard autoCloseTimer != nil else { return }
+        autoCloseTimer?.invalidate()
+        autoCloseTimer = nil
+        countdownState.pause()
+    }
+
+    private func resumeAutoCloseTimer() {
+        guard preferences.overlayAutoCloseDelay > 0 else { return }
+
+        let remainingTime = countdownState.remainingTime()
+        guard remainingTime > 0 else {
+            dismiss()
+            return
+        }
+
+        countdownState.resume()
+        scheduleAutoCloseTimer(after: remainingTime)
+    }
+
+    private func scheduleAutoCloseTimer(after delay: TimeInterval) {
+        autoCloseTimer?.invalidate()
         autoCloseTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             self?.dismiss()
         }
@@ -311,16 +386,14 @@ private class OverlayTrackingView: NSView {
 
 // MARK: - QuickAccessOverlayView (SwiftUI)
 
-struct QuickAccessOverlayView: View {
+private struct QuickAccessOverlayView: View {
     let image: NSImage
+    let countdownState: AutoCloseCountdownState
     let onCopy: () -> Void
     let onSave: () -> Void
     let onAnnotate: () -> Void
     let onPin: () -> Void
     let onClose: () -> Void
-
-    @State private var isHovering = false
-    @State private var countdownProgress: CGFloat = 1.0
 
     private var autoCloseDelay: TimeInterval {
         Preferences.shared.overlayAutoCloseDelay
@@ -349,10 +422,15 @@ struct QuickAccessOverlayView: View {
 
             // Auto-close countdown bar
             if autoCloseDelay > 0 {
-                GeometryReader { geo in
-                    RoundedRectangle(cornerRadius: 1.5)
-                        .fill(Color.secondary.opacity(0.3))
-                        .frame(width: geo.size.width * countdownProgress, height: 3)
+                TimelineView(.periodic(from: .now, by: 0.05)) { context in
+                    GeometryReader { geo in
+                        RoundedRectangle(cornerRadius: 1.5)
+                            .fill(Color.secondary.opacity(0.3))
+                            .frame(
+                                width: geo.size.width * countdownState.progress(at: context.date),
+                                height: 3
+                            )
+                    }
                 }
                 .frame(height: 3)
                 .clipShape(RoundedRectangle(cornerRadius: 1.5))
@@ -362,25 +440,6 @@ struct QuickAccessOverlayView: View {
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
-        .onHover { hovering in
-            isHovering = hovering
-            if hovering {
-                // Pause countdown animation
-                countdownProgress = countdownProgress // freeze current
-            } else {
-                // Resume countdown from current position
-                withAnimation(.linear(duration: autoCloseDelay * Double(countdownProgress))) {
-                    countdownProgress = 0
-                }
-            }
-        }
-        .onAppear {
-            if autoCloseDelay > 0 {
-                withAnimation(.linear(duration: autoCloseDelay)) {
-                    countdownProgress = 0
-                }
-            }
-        }
     }
 }
 
