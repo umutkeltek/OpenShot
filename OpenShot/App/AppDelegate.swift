@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let logger = Logger(subsystem: "com.openshot.app", category: "AppDelegate")
     private var recordingTimer: Timer?
     private var recordingStartTime: Date?
+    private var gifRecorder: GIFRecorder?
 
     // Menu items that need dynamic enable/disable
     private var restoreItem: NSMenuItem?
@@ -498,10 +499,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
 
-        NotificationCenter.default.addObserver(forName: .initRecordGIF, object: nil, queue: .main) { _ in
+        NotificationCenter.default.addObserver(forName: .initRecordGIF, object: nil, queue: .main) { [weak self] _ in
+            guard let self else { return }
+
+            if let activeRecorder = self.gifRecorder, activeRecorder.isRecording {
+                Task {
+                    do {
+                        let url = try await activeRecorder.stopCapture()
+                        await MainActor.run {
+                            self.gifRecorder = nil
+                            ToastManager.show(icon: "checkmark.circle.fill", message: "GIF saved", detail: url.lastPathComponent)
+                            NSWorkspace.shared.activateFileViewerSelecting([url])
+                        }
+                    } catch {
+                        await MainActor.run {
+                            self.gifRecorder = nil
+                            AlertHelper.showGenericError(title: "GIF Export Failed", message: error.localizedDescription)
+                        }
+                    }
+                }
+                return
+            }
+
             Task { @MainActor in
                 guard let rect = await AreaSelector.present() else { return }
-                GIFRecorder().startCapture(rect: rect)
+                let recorder = GIFRecorder()
+                self.gifRecorder = recorder
+                recorder.startCapture(rect: rect)
             }
         }
 
