@@ -8,6 +8,7 @@
 
 import AppKit
 import ScreenCaptureKit
+import SwiftData
 import os
 
 @Observable
@@ -330,6 +331,19 @@ final class CaptureEngine {
         let overlay = QuickAccessOverlay(image: image)
         overlay.show()
         SoundEffects.playCapture()
+
+        do {
+            let container = try ModelContainer(for: CaptureRecord.self)
+            let context = ModelContext(container)
+            _ = try CaptureHistoryManager.shared.saveCapture(
+                image: image,
+                type: "screenshot",
+                preferences: preferences,
+                modelContext: context
+            )
+        } catch {
+            logger.warning("Failed to save capture to history: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Core Capture
