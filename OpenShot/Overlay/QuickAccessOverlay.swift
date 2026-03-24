@@ -69,6 +69,9 @@ final class QuickAccessOverlay {
     /// Keeps a strong reference so the overlay isn't deallocated while shown.
     private static var activeOverlay: QuickAccessOverlay?
 
+    /// Tracks the most recent temp PNG written for clipboard file URL support.
+    private static var lastClipboardTempURL: URL?
+
     /// Stores the image from the most recently dismissed overlay for restore.
     static var lastDismissedImage: NSImage?
 
@@ -252,12 +255,19 @@ final class QuickAccessOverlay {
         // Write image data (TIFF) for apps that accept image paste
         pasteboard.writeObjects([capturedImage])
 
+        // Clean up the previous temp clipboard file before writing a new one.
+        if let previousURL = QuickAccessOverlay.lastClipboardTempURL {
+            try? FileManager.default.removeItem(at: previousURL)
+            QuickAccessOverlay.lastClipboardTempURL = nil
+        }
+
         // Also write a temp file URL for apps that accept file URLs
         if let pngData = capturedImage.pngData() {
             let tempURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent("OpenShot_clipboard_\(UUID().uuidString).png")
             try? pngData.write(to: tempURL)
             pasteboard.setString(tempURL.absoluteString, forType: .fileURL)
+            QuickAccessOverlay.lastClipboardTempURL = tempURL
         }
 
         logger.info("Image copied to clipboard (image + file URL)")
