@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let logger = Logger(subsystem: "com.openshot.app", category: "AppDelegate")
     private var recordingTimer: Timer?
     private var recordingStartTime: Date?
+    private var recordingControlsPanel: RecordingControlsPanel?
     private var gifRecorder: GIFRecorder?
 
     // Menu items that need dynamic enable/disable
@@ -543,6 +544,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: - Recording UI
 
+    @MainActor
     private func startRecordingUI() {
         recordingStartTime = Date()
         recordingTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -553,12 +555,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let timeString = String(format: "%02d:%02d", minutes, seconds)
             self.statusItem.button?.title = " \(timeString)"
         }
+
+        let controlsPanel = RecordingControlsPanel()
+        controlsPanel.show(
+            recorder: ScreenRecorder.shared,
+            onStop: { [weak self] in
+                self?.recordScreen()
+            },
+            onRestart: { [weak self] in
+                guard let self else { return }
+                Task { @MainActor in
+                    do {
+                        try await ScreenRecorder.shared.restartRecording()
+                        SoundEffects.playRecordingStart()
+                    } catch {
+                        self.stopRecordingUI()
+                        AlertHelper.showGenericError(title: "Restart Failed", message: error.localizedDescription)
+                    }
+                }
+            }
+        )
+        self.recordingControlsPanel = controlsPanel
     }
 
+    @MainActor
     private func stopRecordingUI() {
         recordingTimer?.invalidate()
         recordingTimer = nil
         recordingStartTime = nil
+        recordingControlsPanel?.dismiss()
+        recordingControlsPanel = nil
         statusItem.button?.title = ""
     }
 
