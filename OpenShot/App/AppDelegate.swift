@@ -393,6 +393,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private var settingsWindow: NSWindow?
+    private var historyWindow: NSWindow?
 
     @objc private func showSettings() {
         // If settings window already exists, just bring it to front.
@@ -597,6 +598,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: - History Window
 
     private func openHistoryWindow() {
+        if let existing = historyWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
         let historyView = HistoryView()
             .modelContainer(for: CaptureRecord.self)
         let hostingController = NSHostingController(rootView: historyView)
@@ -606,6 +613,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         window.minSize = NSSize(width: 400, height: 300)
         window.setFrameAutosaveName("OpenShot.History")
         window.center()
+
+        self.historyWindow = window
+
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
