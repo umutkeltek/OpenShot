@@ -293,6 +293,11 @@ final class CaptureEngine {
     func capturePreviousArea() async throws -> NSImage {
         guard let rect = lastCapturedRect else {
             logger.warning("No previous area rect stored")
+            ToastManager.show(
+                icon: "exclamationmark.triangle",
+                message: "No previous area",
+                detail: "Capture an area first with ⇧⌘4"
+            )
             throw CaptureEngineError.cancelled
         }
 
