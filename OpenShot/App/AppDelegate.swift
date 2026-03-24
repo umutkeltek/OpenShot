@@ -533,7 +533,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NotificationCenter.default.addObserver(forName: .initOCRCapture, object: nil, queue: .main) { _ in
             Task { @MainActor in
                 let ocr = OCROverlay()
-                try? await ocr.captureAndRecognize()
+                do {
+                    try await ocr.captureAndRecognize()
+                } catch {
+                    if case CaptureEngineError.cancelled = error { return }
+                    Logger(subsystem: "com.openshot", category: "ocr").error("OCR failed: \(error.localizedDescription)")
+                    AlertHelper.showGenericError(title: "OCR Failed", message: error.localizedDescription)
+                }
             }
         }
 
