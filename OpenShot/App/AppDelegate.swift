@@ -357,7 +357,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         Task { @MainActor in
             do {
-                let image = try await CaptureEngine.shared.captureWithSelfTimer(mode: .area)
+                let image = try await CaptureEngine.shared.captureWithSelfTimer(mode: .fullscreen)
                 CaptureEngine.shared.presentResult(image)
             } catch {
                 logger.warning("Self-Timer Capture failed: \(error.localizedDescription)")
