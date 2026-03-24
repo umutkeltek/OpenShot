@@ -288,6 +288,9 @@ final class FloatingScreenshot: NSPanel {
         pasteboard.clearContents()
         pasteboard.writeObjects([screenshotImage])
         logger.info("Floating screenshot image copied to clipboard")
+        Task { @MainActor in
+            ToastManager.show(icon: "checkmark.circle.fill", message: "Copied to clipboard")
+        }
     }
 
     @objc private func closeWindow(_ sender: NSMenuItem) {
