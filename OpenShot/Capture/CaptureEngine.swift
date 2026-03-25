@@ -8,7 +8,6 @@
 
 import AppKit
 import ScreenCaptureKit
-import SwiftData
 import os
 
 @Observable
@@ -338,8 +337,7 @@ final class CaptureEngine {
         SoundEffects.playCapture()
 
         do {
-            let container = try ModelContainer(for: CaptureRecord.self)
-            let context = ModelContext(container)
+            let context = try CaptureHistoryManager.shared.makeContext()
             _ = try CaptureHistoryManager.shared.saveCapture(
                 image: image,
                 type: "screenshot",

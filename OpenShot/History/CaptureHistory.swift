@@ -53,6 +53,7 @@ final class CaptureHistoryManager {
     private let logger = Logger(subsystem: "com.openshot", category: "history")
     private let capturesDirectory: URL
     private let thumbnailsDirectory: URL
+    private let modelContainer: ModelContainer?
 
     init() {
         let appSupport = FileManager.default.urls(
@@ -73,7 +74,22 @@ final class CaptureHistoryManager {
             withIntermediateDirectories: true
         )
 
+        do {
+            self.modelContainer = try ModelContainer(for: CaptureRecord.self)
+        } catch {
+            self.modelContainer = nil
+            logger.error("Failed to create ModelContainer: \(error)")
+        }
+
         logger.info("CaptureHistoryManager initialized – captures: \(self.capturesDirectory.path(percentEncoded: false))")
+    }
+
+    /// Returns a new ModelContext from the shared container.
+    func makeContext() throws -> ModelContext {
+        guard let container = modelContainer else {
+            throw OpenShotError.fileIOFailed("ModelContainer not available")
+        }
+        return ModelContext(container)
     }
 
     // MARK: - Save Capture

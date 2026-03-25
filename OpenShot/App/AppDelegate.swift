@@ -492,8 +492,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                         ToastManager.show(icon: "checkmark.circle.fill", message: "Recording saved", detail: finalURL.lastPathComponent)
 
                         do {
-                            let container = try ModelContainer(for: CaptureRecord.self)
-                            let context = ModelContext(container)
+                            let context = try CaptureHistoryManager.shared.makeContext()
                             try CaptureHistoryManager.shared.saveRecording(
                                 url: finalURL,
                                 type: "recording",
@@ -536,8 +535,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                             ToastManager.show(icon: "checkmark.circle.fill", message: "GIF saved", detail: url.lastPathComponent)
 
                             do {
-                                let container = try ModelContainer(for: CaptureRecord.self)
-                                let context = ModelContext(container)
+                                let context = try CaptureHistoryManager.shared.makeContext()
                                 try CaptureHistoryManager.shared.saveRecording(
                                     url: url,
                                     type: "gif",
