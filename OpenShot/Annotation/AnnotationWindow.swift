@@ -304,6 +304,9 @@ final class AnnotationWindow: NSWindow {
         }
 
         logger.info("Annotated image copied to clipboard (image + file URL)")
+        Task { @MainActor in
+            ToastManager.show(icon: "checkmark.circle.fill", message: "Copied to clipboard")
+        }
     }
 
     private func resetAnnotations() {
