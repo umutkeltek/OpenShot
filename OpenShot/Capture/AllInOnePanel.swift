@@ -159,25 +159,9 @@ struct AllInOneView: View {
             // Grid of action buttons
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(AllInOneAction.allCases) { action in
-                    Button {
+                    AllInOneButton(action: action) {
                         onAction(action)
-                    } label: {
-                        VStack(spacing: 6) {
-                            Image(systemName: action.systemImage)
-                                .font(.system(size: 24))
-                                .frame(height: 30)
-                            Text(action.displayName)
-                                .font(.caption)
-                                .lineLimit(1)
-                            Text(action.shortcutHint)
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .frame(width: 85, height: 80)
-                        .background(Color(.controlBackgroundColor))
-                        .cornerRadius(8)
                     }
-                    .buttonStyle(.plain)
                 }
             }
 
@@ -187,5 +171,39 @@ struct AllInOneView: View {
                 .foregroundStyle(.quaternary)
         }
         .padding()
+    }
+}
+
+private struct AllInOneButton: View {
+    let action: AllInOneAction
+    let onTap: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 6) {
+                Image(systemName: action.systemImage)
+                    .font(.system(size: 24))
+                    .frame(height: 30)
+                Text(action.displayName)
+                    .font(.caption)
+                    .lineLimit(1)
+                Text(action.shortcutHint)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(width: 85, height: 80)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isHovering ? Color.accentColor.opacity(0.15) : Color(.controlBackgroundColor))
+            )
+            .scaleEffect(isHovering ? 1.05 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: isHovering)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovering = hovering
+        }
     }
 }
