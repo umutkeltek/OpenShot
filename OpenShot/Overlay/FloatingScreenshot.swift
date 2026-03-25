@@ -178,7 +178,7 @@ final class FloatingScreenshot: NSPanel {
 
     // MARK: - Key Handling
 
-    override var canBecomeKey: Bool { !isLocked }
+    override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 
     override func keyDown(with event: NSEvent) {
