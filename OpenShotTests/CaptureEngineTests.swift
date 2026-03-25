@@ -214,13 +214,15 @@ struct PreferencesTests {
         #expect(!prefs.saveLocation.path.isEmpty)
     }
 
-    @Test("ImageFormat allCases has 3 formats")
+    @Test("ImageFormat allCases has 5 formats")
     func testImageFormatCases() {
         let formats = Preferences.ImageFormat.allCases
-        #expect(formats.count == 3)
+        #expect(formats.count == 5)
         #expect(formats.contains(.png))
         #expect(formats.contains(.jpeg))
         #expect(formats.contains(.tiff))
+        #expect(formats.contains(.webp))
+        #expect(formats.contains(.heic))
     }
 
     @Test("ImageFormat file extensions match raw values")

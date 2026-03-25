@@ -33,6 +33,8 @@ final class Preferences {
         static let historyRetentionDays = "pref_historyRetentionDays"
         static let launchAtLogin = "pref_launchAtLogin"
         static let playRecordingSounds = "pref_playRecordingSounds"
+        static let hideDesktopIconsDuringCapture = "pref_hideDesktopIconsDuringCapture"
+        static let fileNamingTemplate = "pref_fileNamingTemplate"
     }
 
     // MARK: - Nested Enums
@@ -205,8 +207,8 @@ final class Preferences {
     }
 
     var hideDesktopIconsDuringCapture: Bool {
-        get { defaults.bool(forKey: "pref_hideDesktopIconsDuringCapture") }
-        set { defaults.set(newValue, forKey: "pref_hideDesktopIconsDuringCapture") }
+        get { defaults.bool(forKey: Keys.hideDesktopIconsDuringCapture) }
+        set { defaults.set(newValue, forKey: Keys.hideDesktopIconsDuringCapture) }
     }
 
     /// Self-timer countdown duration in seconds (0 = disabled, 3 or 5 typical).
@@ -315,10 +317,10 @@ final class Preferences {
 
     var fileNamingTemplate: String {
         get {
-            defaults.string(forKey: "pref_fileNamingTemplate") ?? FileNamer.defaultTemplate
+            defaults.string(forKey: Keys.fileNamingTemplate) ?? FileNamer.defaultTemplate
         }
         set {
-            defaults.set(newValue, forKey: "pref_fileNamingTemplate")
+            defaults.set(newValue, forKey: Keys.fileNamingTemplate)
         }
     }
 

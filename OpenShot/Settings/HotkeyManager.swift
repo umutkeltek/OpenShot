@@ -68,58 +68,58 @@ final class HotkeyManager {
     // MARK: - Default Bindings
 
     /// Default keyboard shortcut bindings.
-    /// Key codes reference:
-    /// - 3 = F key (but we use number keys on main keyboard)
-    /// - kVK_ANSI_3 = 0x14 (20), kVK_ANSI_4 = 0x15 (21), kVK_ANSI_5 = 0x17 (23), kVK_ANSI_6 = 0x16 (22)
-    /// - kVK_ANSI_R = 0x0F (15), kVK_ANSI_G = 0x05 (5), kVK_ANSI_T = 0x11 (17)
+    /// Uses Ctrl+Shift+Cmd to avoid conflicts with macOS built-in
+    /// screenshot shortcuts (Shift+Cmd+3/4/5).
+    /// Key codes: kVK_ANSI_3=0x14, kVK_ANSI_4=0x15, kVK_ANSI_5=0x17,
+    /// kVK_ANSI_6=0x16, kVK_ANSI_R=0x0F, kVK_ANSI_G=0x05, kVK_ANSI_T=0x11
     static let defaultBindings: [HotkeyAction: KeyCombo] = [
         .captureFullscreen: KeyCombo(
             keyCode: UInt16(kVK_ANSI_3),
-            modifierFlags: [.shift, .command]
+            modifierFlags: [.control, .shift, .command]
         ),
         .captureArea: KeyCombo(
             keyCode: UInt16(kVK_ANSI_4),
-            modifierFlags: [.shift, .command]
+            modifierFlags: [.control, .shift, .command]
         ),
         .captureWindow: KeyCombo(
             keyCode: UInt16(kVK_ANSI_5),
-            modifierFlags: [.shift, .command]
+            modifierFlags: [.control, .shift, .command]
         ),
         .captureScrolling: KeyCombo(
             keyCode: UInt16(kVK_ANSI_6),
-            modifierFlags: [.shift, .command]
+            modifierFlags: [.control, .shift, .command]
         ),
         .recordScreen: KeyCombo(
             keyCode: UInt16(kVK_ANSI_R),
-            modifierFlags: [.shift, .command]
+            modifierFlags: [.control, .shift, .command]
         ),
         .recordGIF: KeyCombo(
             keyCode: UInt16(kVK_ANSI_G),
-            modifierFlags: [.shift, .command]
+            modifierFlags: [.control, .shift, .command]
         ),
         .ocrCaptureText: KeyCombo(
             keyCode: UInt16(kVK_ANSI_T),
-            modifierFlags: [.shift, .command]
+            modifierFlags: [.control, .shift, .command]
         ),
         .allInOne: KeyCombo(
             keyCode: UInt16(kVK_ANSI_A),
-            modifierFlags: [.shift, .command]
+            modifierFlags: [.control, .shift, .command]
         ),
         .capturePreviousArea: KeyCombo(
             keyCode: UInt16(kVK_ANSI_7),
-            modifierFlags: [.shift, .command]
+            modifierFlags: [.control, .shift, .command]
         ),
         .selfTimerCapture: KeyCombo(
             keyCode: UInt16(kVK_ANSI_8),
-            modifierFlags: [.shift, .command]
+            modifierFlags: [.control, .shift, .command]
         ),
         .restoreRecentlyClosed: KeyCombo(
             keyCode: UInt16(kVK_ANSI_Z),
-            modifierFlags: [.shift, .command]
+            modifierFlags: [.control, .shift, .command]
         ),
         .toggleDesktopIcons: KeyCombo(
             keyCode: UInt16(kVK_ANSI_D),
-            modifierFlags: [.shift, .command]
+            modifierFlags: [.control, .shift, .command]
         ),
     ]
 

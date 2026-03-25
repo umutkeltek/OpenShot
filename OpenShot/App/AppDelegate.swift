@@ -30,6 +30,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         hotkeyManager.registerAll()
         Permissions.ensureScreenRecording()
         OnboardingWindowManager.showIfNeeded()
+        cleanupTempFiles()
+        cleanupCaptureHistory()
         logger.info("OpenShot launched successfully")
     }
 
@@ -65,7 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(captureArea),
             keyEquivalent: "4"
         )
-        captureAreaItem.keyEquivalentModifierMask = [.shift, .command]
+        captureAreaItem.keyEquivalentModifierMask = [.control, .shift, .command]
         menu.addItem(captureAreaItem)
 
         let captureWindowItem = NSMenuItem(
@@ -73,7 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(captureWindow),
             keyEquivalent: "5"
         )
-        captureWindowItem.keyEquivalentModifierMask = [.shift, .command]
+        captureWindowItem.keyEquivalentModifierMask = [.control, .shift, .command]
         menu.addItem(captureWindowItem)
 
         let captureFullscreenItem = NSMenuItem(
@@ -81,7 +83,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(captureFullscreen),
             keyEquivalent: "3"
         )
-        captureFullscreenItem.keyEquivalentModifierMask = [.shift, .command]
+        captureFullscreenItem.keyEquivalentModifierMask = [.control, .shift, .command]
         menu.addItem(captureFullscreenItem)
 
         let scrollingCaptureItem = NSMenuItem(
@@ -89,7 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(captureScrolling),
             keyEquivalent: "6"
         )
-        scrollingCaptureItem.keyEquivalentModifierMask = [.shift, .command]
+        scrollingCaptureItem.keyEquivalentModifierMask = [.control, .shift, .command]
         menu.addItem(scrollingCaptureItem)
 
         let capturePreviousItem = NSMenuItem(
@@ -97,7 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(capturePreviousArea),
             keyEquivalent: "7"
         )
-        capturePreviousItem.keyEquivalentModifierMask = [.shift, .command]
+        capturePreviousItem.keyEquivalentModifierMask = [.control, .shift, .command]
         menu.addItem(capturePreviousItem)
 
         let selfTimerItem = NSMenuItem(
@@ -105,7 +107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(selfTimerCapture),
             keyEquivalent: "8"
         )
-        selfTimerItem.keyEquivalentModifierMask = [.shift, .command]
+        selfTimerItem.keyEquivalentModifierMask = [.control, .shift, .command]
         menu.addItem(selfTimerItem)
 
         menu.addItem(NSMenuItem.separator())
@@ -115,7 +117,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(showAllInOne),
             keyEquivalent: "A"
         )
-        allInOneItem.keyEquivalentModifierMask = [.shift, .command]
+        allInOneItem.keyEquivalentModifierMask = [.control, .shift, .command]
         menu.addItem(allInOneItem)
 
         menu.addItem(NSMenuItem.separator())
@@ -125,7 +127,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(recordScreen),
             keyEquivalent: "R"
         )
-        recordScreenItem.keyEquivalentModifierMask = [.shift, .command]
+        recordScreenItem.keyEquivalentModifierMask = [.control, .shift, .command]
         menu.addItem(recordScreenItem)
 
         let recordGIFItem = NSMenuItem(
@@ -133,7 +135,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(recordGIF),
             keyEquivalent: "G"
         )
-        recordGIFItem.keyEquivalentModifierMask = [.shift, .command]
+        recordGIFItem.keyEquivalentModifierMask = [.control, .shift, .command]
         menu.addItem(recordGIFItem)
 
         menu.addItem(NSMenuItem.separator())
@@ -143,7 +145,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(captureText),
             keyEquivalent: "T"
         )
-        ocrItem.keyEquivalentModifierMask = [.shift, .command]
+        ocrItem.keyEquivalentModifierMask = [.control, .shift, .command]
         menu.addItem(ocrItem)
 
         menu.addItem(NSMenuItem.separator())
@@ -153,7 +155,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(restoreRecentlyClosed),
             keyEquivalent: "Z"
         )
-        restoreMenuItem.keyEquivalentModifierMask = [.shift, .command]
+        restoreMenuItem.keyEquivalentModifierMask = [.control, .shift, .command]
         menu.addItem(restoreMenuItem)
         self.restoreItem = restoreMenuItem
 
@@ -162,7 +164,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(toggleDesktopIcons),
             keyEquivalent: "D"
         )
-        toggleDesktopItem.keyEquivalentModifierMask = [.shift, .command]
+        toggleDesktopItem.keyEquivalentModifierMask = [.control, .shift, .command]
         menu.addItem(toggleDesktopItem)
 
         menu.addItem(NSMenuItem.separator())
@@ -485,7 +487,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
                         let filename = url.lastPathComponent
                         let destinationURL = saveDir.appendingPathComponent(filename)
-                        try? FileManager.default.moveItem(at: url, to: destinationURL)
+                        do {
+                            try FileManager.default.moveItem(at: url, to: destinationURL)
+                        } catch {
+                            self.logger.warning("Failed to move recording to save location: \(error.localizedDescription)")
+                        }
 
                         let finalURL = FileManager.default.fileExists(atPath: destinationURL.path) ? destinationURL : url
                         self.logger.info("Recording saved to \(finalURL.path)")
@@ -652,6 +658,58 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    // MARK: - Launch Cleanup
+
+    private func cleanupTempFiles() {
+        let fileManager = FileManager.default
+        let tempDir = fileManager.temporaryDirectory
+
+        do {
+            let contents = try fileManager.contentsOfDirectory(
+                at: tempDir,
+                includingPropertiesForKeys: [.contentModificationDateKey],
+                options: .skipsHiddenFiles
+            )
+
+            let cutoff = Date().addingTimeInterval(-24 * 60 * 60)
+            var removedCount = 0
+
+            for fileURL in contents where fileURL.lastPathComponent.hasPrefix("OpenShot_") {
+                do {
+                    let attributes = try fileURL.resourceValues(forKeys: [.contentModificationDateKey])
+                    if let modified = attributes.contentModificationDate, modified < cutoff {
+                        try fileManager.removeItem(at: fileURL)
+                        removedCount += 1
+                    }
+                } catch {
+                    logger.debug("Skipping temp file \(fileURL.lastPathComponent): \(error.localizedDescription)")
+                }
+            }
+
+            if removedCount > 0 {
+                logger.info("Cleaned up \(removedCount) stale temp file(s)")
+            }
+        } catch {
+            logger.warning("Temp file cleanup failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func cleanupCaptureHistory() {
+        let retentionDays = preferences.historyRetentionDays
+        Task.detached(priority: .utility) {
+            do {
+                let context = try CaptureHistoryManager.shared.makeContext()
+                try CaptureHistoryManager.shared.cleanupOldCaptures(
+                    olderThan: retentionDays,
+                    modelContext: context
+                )
+            } catch {
+                Logger(subsystem: "com.openshot.app", category: "AppDelegate")
+                    .warning("History retention cleanup failed: \(error.localizedDescription)")
+            }
+        }
     }
 }
 

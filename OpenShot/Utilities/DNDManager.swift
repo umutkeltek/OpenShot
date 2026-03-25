@@ -8,21 +8,30 @@ import os
 
 struct DNDManager {
     private static let logger = Logger(subsystem: "com.openshot", category: "dnd")
+    private static var hasWarnedAboutDND = false
 
-    /// Enable Do Not Disturb by running shortcuts or defaults
-    /// macOS 14+ doesn't have a simple public API for DND, so we use a workaround
+    /// Enable Do Not Disturb via the Shortcuts CLI. Runs asynchronously
+    /// to avoid blocking the cooperative thread pool.
     static func enableDND() {
-        // Use shortcuts app automation or defaults write
-        // The most reliable approach on macOS 14+ is via the Focus system
-        // We use the `shortcuts` CLI to run a shortcut named "Enable DND" if it exists
-        // Fallback: use NSDistributedNotificationCenter (limited on newer macOS)
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/shortcuts")
         task.arguments = ["run", "Enable DND"]
         task.standardError = FileHandle.nullDevice
         task.standardOutput = FileHandle.nullDevice
-        try? task.run()
-        logger.info("DND enable requested via Shortcuts")
+        task.terminationHandler = { process in
+            if process.terminationStatus != 0 {
+                logger.warning("Enable DND shortcut exited with status \(process.terminationStatus)")
+                showDNDWarningOnce()
+            } else {
+                logger.info("DND enabled via Shortcuts")
+            }
+        }
+        do {
+            try task.run()
+        } catch {
+            logger.warning("Failed to run Enable DND shortcut: \(error.localizedDescription)")
+            showDNDWarningOnce()
+        }
     }
 
     static func disableDND() {
@@ -31,8 +40,26 @@ struct DNDManager {
         task.arguments = ["run", "Disable DND"]
         task.standardError = FileHandle.nullDevice
         task.standardOutput = FileHandle.nullDevice
-        try? task.run()
-        logger.info("DND disable requested via Shortcuts")
+        task.terminationHandler = { process in
+            if process.terminationStatus != 0 {
+                logger.warning("Disable DND shortcut exited with status \(process.terminationStatus)")
+            } else {
+                logger.info("DND disabled via Shortcuts")
+            }
+        }
+        do {
+            try task.run()
+        } catch {
+            logger.warning("Failed to run Disable DND shortcut: \(error.localizedDescription)")
+        }
+    }
+
+    private static func showDNDWarningOnce() {
+        guard !hasWarnedAboutDND else { return }
+        hasWarnedAboutDND = true
+        DispatchQueue.main.async {
+            ToastManager.show(icon: "moon.slash", message: "DND not available", detail: "Create 'Enable DND' shortcut in Shortcuts app")
+        }
     }
 
     /// Scoped DND: enable during the given async operation, disable after

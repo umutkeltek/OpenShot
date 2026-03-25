@@ -28,9 +28,6 @@ final class CaptureEngine {
     /// The rectangle from the most recent area capture, for "Capture Previous Area".
     private(set) var lastCapturedRect: CGRect?
 
-    /// The most recently dismissed capture result, for "Restore Recently Closed".
-    static var lastDismissedImage: NSImage?
-
     // MARK: - Initializer
 
     private init() {}

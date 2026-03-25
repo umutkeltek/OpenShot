@@ -14,11 +14,28 @@ struct Permissions {
     }
 
     /// Requests screen recording permission from the user.
-    /// This will present the system permission dialog if permission
-    /// has not yet been granted or denied.
+    /// On first request, presents the system permission dialog.
+    /// On subsequent requests (when already denied), shows an alert
+    /// guiding the user to System Settings.
     static func requestScreenRecording() {
         logger.info("Requesting screen recording permission")
-        CGRequestScreenCaptureAccess()
+
+        // CGRequestScreenCaptureAccess() only shows the system prompt once.
+        // If already denied, it returns false silently. In that case, show
+        // an alert directing the user to System Settings.
+        let granted = CGRequestScreenCaptureAccess()
+        if !granted {
+            Task { @MainActor in
+                showPermissionAlert()
+            }
+        }
+    }
+
+    /// Shows the existing permission alert via AlertHelper.
+    @MainActor
+    private static func showPermissionAlert() {
+        NSApp.activate(ignoringOtherApps: true)
+        AlertHelper.showError(.captureNotPermitted)
     }
 
     /// Checks screen recording permission and requests it if not already granted.

@@ -15,19 +15,33 @@ class URLSchemeHandler: NSObject {
 
         switch command {
         case "capture-area":
-            NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.area])
+            confirmAndExecute(message: "An external app wants to capture your screen. Allow?") {
+                NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.area])
+            }
         case "capture-window":
-            NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.window])
+            confirmAndExecute(message: "An external app wants to capture your screen. Allow?") {
+                NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.window])
+            }
         case "capture-fullscreen":
-            NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.fullscreen])
+            confirmAndExecute(message: "An external app wants to capture your screen. Allow?") {
+                NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.fullscreen])
+            }
         case "scrolling-capture":
-            NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.scrolling])
-        case "record-screen":
-            NotificationCenter.default.post(name: .initRecordScreen, object: nil)
-        case "record-gif":
-            NotificationCenter.default.post(name: .initRecordGIF, object: nil)
+            confirmAndExecute(message: "An external app wants to capture your screen. Allow?") {
+                NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.scrolling])
+            }
         case "capture-text":
-            NotificationCenter.default.post(name: .initOCRCapture, object: nil)
+            confirmAndExecute(message: "An external app wants to capture your screen. Allow?") {
+                NotificationCenter.default.post(name: .initOCRCapture, object: nil)
+            }
+        case "record-screen":
+            confirmAndExecute(message: "An external app wants to start a recording. Allow?") {
+                NotificationCenter.default.post(name: .initRecordScreen, object: nil)
+            }
+        case "record-gif":
+            confirmAndExecute(message: "An external app wants to start a recording. Allow?") {
+                NotificationCenter.default.post(name: .initRecordGIF, object: nil)
+            }
         case "open-history":
             NotificationCenter.default.post(name: .showCaptureHistory, object: nil)
         case "toggle-desktop-icons":
@@ -38,6 +52,26 @@ class URLSchemeHandler: NSObject {
             }
         default:
             logger.warning("Unknown URL scheme command: \(command)")
+        }
+    }
+
+    // MARK: - Confirmation Alert
+
+    private func confirmAndExecute(message: String, action: @escaping () -> Void) {
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.messageText = "OpenShot"
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Allow")
+        alert.addButton(withTitle: "Deny")
+
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            action()
+        } else {
+            logger.info("User denied URL scheme action: \(message)")
         }
     }
 }

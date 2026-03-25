@@ -12,7 +12,7 @@ import AppKit
 import os
 
 @Observable
-final class ScreenRecorder: NSObject, SCStreamOutput, @unchecked Sendable {
+final class ScreenRecorder: NSObject, SCStreamOutput {
 
     // MARK: - Singleton
 
@@ -47,6 +47,9 @@ final class ScreenRecorder: NSObject, SCStreamOutput, @unchecked Sendable {
     private let clickVisualizer = ClickVisualizer()
     private let keystrokeVisualizer = KeystrokeVisualizer()
 
+    // Thread-safe paused state for buffer queue access
+    private let _isPausedLock = OSAllocatedUnfairLock(initialState: false)
+
     // Serial queue for sample buffer processing
     private let bufferQueue = DispatchQueue(label: "com.openshot.recorder.buffer", qos: .userInteractive)
 
@@ -71,7 +74,11 @@ final class ScreenRecorder: NSObject, SCStreamOutput, @unchecked Sendable {
         outputURL = url
 
         // Remove any existing file at that path
-        try? FileManager.default.removeItem(at: url)
+        do {
+            try FileManager.default.removeItem(at: url)
+        } catch {
+            logger.debug("No existing temp file to remove: \(error.localizedDescription)")
+        }
 
         // Create AVAssetWriter
         let writer: AVAssetWriter
@@ -176,6 +183,7 @@ final class ScreenRecorder: NSObject, SCStreamOutput, @unchecked Sendable {
         stream = scStream
 
         // Update observable state on main actor
+        _isPausedLock.withLock { $0 = false }
         await MainActor.run {
             self.isRecording = true
             self.isPaused = false
@@ -205,6 +213,7 @@ final class ScreenRecorder: NSObject, SCStreamOutput, @unchecked Sendable {
     func pauseRecording() {
         guard isRecording, !isPaused else { return }
         isPaused = true
+        _isPausedLock.withLock { $0 = true }
         pauseStartDate = Date()
         timer?.invalidate()
         timer = nil
@@ -218,6 +227,7 @@ final class ScreenRecorder: NSObject, SCStreamOutput, @unchecked Sendable {
         }
         pauseStartDate = nil
         isPaused = false
+        _isPausedLock.withLock { $0 = false }
         startElapsedTimer()
         logger.info("Recording resumed")
     }
@@ -260,6 +270,7 @@ final class ScreenRecorder: NSObject, SCStreamOutput, @unchecked Sendable {
         DNDManager.disableDND()
 
         // Reset state
+        _isPausedLock.withLock { $0 = false }
         await MainActor.run {
             self.timer?.invalidate()
             self.timer = nil
@@ -310,11 +321,16 @@ final class ScreenRecorder: NSObject, SCStreamOutput, @unchecked Sendable {
 
         // Delete the partial output file
         if let url = outputURL {
-            try? FileManager.default.removeItem(at: url)
-            logger.info("Deleted partial recording at \(url.path)")
+            do {
+                try FileManager.default.removeItem(at: url)
+                logger.info("Deleted partial recording at \(url.path)")
+            } catch {
+                logger.warning("Failed to delete partial recording: \(error.localizedDescription)")
+            }
         }
 
         // Reset state
+        _isPausedLock.withLock { $0 = false }
         await MainActor.run {
             self.timer?.invalidate()
             self.timer = nil
@@ -346,7 +362,7 @@ final class ScreenRecorder: NSObject, SCStreamOutput, @unchecked Sendable {
     // MARK: - SCStreamOutput
 
     func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
-        guard !isPaused else { return }
+        guard !_isPausedLock.withLock({ $0 }) else { return }
         guard let writer = assetWriter, writer.status == .writing || !sessionStarted else { return }
 
         let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
