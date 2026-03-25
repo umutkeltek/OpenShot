@@ -337,14 +337,13 @@ final class QuickAccessOverlay {
 
             // Reveal in Finder.
             NSWorkspace.shared.activateFileViewerSelecting([fileURL])
+            dismiss()
         } catch {
             logger.error("Failed to save screenshot: \(error.localizedDescription)")
             Task { @MainActor in
                 AlertHelper.showGenericError(title: "Save Failed", message: error.localizedDescription)
             }
         }
-
-        dismiss()
     }
 
     func openAnnotationEditor() {
