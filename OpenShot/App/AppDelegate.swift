@@ -477,8 +477,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                         let url = try await ScreenRecorder.shared.stopRecording()
                         self.stopRecordingUI()
                         SoundEffects.playRecordingStop()
-                        self.logger.info("Recording saved to \(url.path)")
-                        ToastManager.show(icon: "checkmark.circle.fill", message: "Recording saved", detail: url.lastPathComponent)
+
+                        let preferences = Preferences.shared
+                        let saveDir = preferences.saveLocation
+                        try? FileManager.default.createDirectory(at: saveDir, withIntermediateDirectories: true)
+
+                        let filename = url.lastPathComponent
+                        let destinationURL = saveDir.appendingPathComponent(filename)
+                        try? FileManager.default.moveItem(at: url, to: destinationURL)
+
+                        let finalURL = FileManager.default.fileExists(atPath: destinationURL.path) ? destinationURL : url
+                        self.logger.info("Recording saved to \(finalURL.path)")
+                        ToastManager.show(icon: "checkmark.circle.fill", message: "Recording saved", detail: finalURL.lastPathComponent)
                     } catch {
                         self.stopRecordingUI()
                         Logger(subsystem: "com.openshot", category: "recorder").error("Stop recording failed: \(error.localizedDescription)")
