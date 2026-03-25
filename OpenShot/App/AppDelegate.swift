@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import ScreenCaptureKit
+import SwiftData
 import os
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -489,6 +490,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                         let finalURL = FileManager.default.fileExists(atPath: destinationURL.path) ? destinationURL : url
                         self.logger.info("Recording saved to \(finalURL.path)")
                         ToastManager.show(icon: "checkmark.circle.fill", message: "Recording saved", detail: finalURL.lastPathComponent)
+
+                        do {
+                            let container = try ModelContainer(for: CaptureRecord.self)
+                            let context = ModelContext(container)
+                            try CaptureHistoryManager.shared.saveRecording(
+                                url: finalURL,
+                                type: "recording",
+                                modelContext: context
+                            )
+                        } catch {
+                            self.logger.warning("Failed to save recording to history: \(error.localizedDescription)")
+                        }
                     } catch {
                         self.stopRecordingUI()
                         Logger(subsystem: "com.openshot", category: "recorder").error("Stop recording failed: \(error.localizedDescription)")
@@ -521,6 +534,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                         await MainActor.run {
                             self.gifRecorder = nil
                             ToastManager.show(icon: "checkmark.circle.fill", message: "GIF saved", detail: url.lastPathComponent)
+
+                            do {
+                                let container = try ModelContainer(for: CaptureRecord.self)
+                                let context = ModelContext(container)
+                                try CaptureHistoryManager.shared.saveRecording(
+                                    url: url,
+                                    type: "gif",
+                                    modelContext: context
+                                )
+                            } catch {
+                                self.logger.warning("Failed to save GIF to history: \(error.localizedDescription)")
+                            }
+
                             NSWorkspace.shared.activateFileViewerSelecting([url])
                         }
                     } catch {
