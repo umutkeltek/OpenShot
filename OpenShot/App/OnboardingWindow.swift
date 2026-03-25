@@ -143,10 +143,11 @@ struct OnboardingWindowManager {
 
         logger.info("Showing first-run onboarding")
 
+        var onboardingWindow: NSWindow?
+
         let onboardingView = OnboardingView {
             UserDefaults.standard.set(true, forKey: hasCompletedOnboardingKey)
-            // Close the onboarding window
-            NSApp.keyWindow?.close()
+            onboardingWindow?.close()
             logger.info("Onboarding completed")
         }
 
@@ -157,6 +158,7 @@ struct OnboardingWindowManager {
         window.setContentSize(NSSize(width: 520, height: 420))
         window.minSize = NSSize(width: 520, height: 420)
         window.center()
+        onboardingWindow = window
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }

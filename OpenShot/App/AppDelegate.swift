@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import ScreenCaptureKit
+import SwiftData
 import os
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -13,6 +14,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let logger = Logger(subsystem: "com.openshot.app", category: "AppDelegate")
     private var recordingTimer: Timer?
     private var recordingStartTime: Date?
+    private var recordingControlsPanel: RecordingControlsPanel?
+    private var gifRecorder: GIFRecorder?
 
     // Menu items that need dynamic enable/disable
     private var restoreItem: NSMenuItem?
@@ -355,7 +358,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         Task { @MainActor in
             do {
-                let image = try await CaptureEngine.shared.captureWithSelfTimer(mode: .area)
+                let image = try await CaptureEngine.shared.captureWithSelfTimer(mode: .fullscreen)
                 CaptureEngine.shared.presentResult(image)
             } catch {
                 logger.warning("Self-Timer Capture failed: \(error.localizedDescription)")
@@ -391,6 +394,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private var settingsWindow: NSWindow?
+    private var historyWindow: NSWindow?
 
     @objc private func showSettings() {
         // If settings window already exists, just bring it to front.
@@ -474,8 +478,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                         let url = try await ScreenRecorder.shared.stopRecording()
                         self.stopRecordingUI()
                         SoundEffects.playRecordingStop()
-                        self.logger.info("Recording saved to \(url.path)")
-                        ToastManager.show(icon: "checkmark.circle.fill", message: "Recording saved", detail: url.lastPathComponent)
+
+                        let preferences = Preferences.shared
+                        let saveDir = preferences.saveLocation
+                        try? FileManager.default.createDirectory(at: saveDir, withIntermediateDirectories: true)
+
+                        let filename = url.lastPathComponent
+                        let destinationURL = saveDir.appendingPathComponent(filename)
+                        try? FileManager.default.moveItem(at: url, to: destinationURL)
+
+                        let finalURL = FileManager.default.fileExists(atPath: destinationURL.path) ? destinationURL : url
+                        self.logger.info("Recording saved to \(finalURL.path)")
+                        ToastManager.show(icon: "checkmark.circle.fill", message: "Recording saved", detail: finalURL.lastPathComponent)
+
+                        do {
+                            let container = try ModelContainer(for: CaptureRecord.self)
+                            let context = ModelContext(container)
+                            try CaptureHistoryManager.shared.saveRecording(
+                                url: finalURL,
+                                type: "recording",
+                                modelContext: context
+                            )
+                        } catch {
+                            self.logger.warning("Failed to save recording to history: \(error.localizedDescription)")
+                        }
                     } catch {
                         self.stopRecordingUI()
                         Logger(subsystem: "com.openshot", category: "recorder").error("Stop recording failed: \(error.localizedDescription)")
@@ -498,17 +524,59 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
 
-        NotificationCenter.default.addObserver(forName: .initRecordGIF, object: nil, queue: .main) { _ in
+        NotificationCenter.default.addObserver(forName: .initRecordGIF, object: nil, queue: .main) { [weak self] _ in
+            guard let self else { return }
+
+            if let activeRecorder = self.gifRecorder, activeRecorder.isRecording {
+                Task {
+                    do {
+                        let url = try await activeRecorder.stopCapture()
+                        await MainActor.run {
+                            self.gifRecorder = nil
+                            ToastManager.show(icon: "checkmark.circle.fill", message: "GIF saved", detail: url.lastPathComponent)
+
+                            do {
+                                let container = try ModelContainer(for: CaptureRecord.self)
+                                let context = ModelContext(container)
+                                try CaptureHistoryManager.shared.saveRecording(
+                                    url: url,
+                                    type: "gif",
+                                    modelContext: context
+                                )
+                            } catch {
+                                self.logger.warning("Failed to save GIF to history: \(error.localizedDescription)")
+                            }
+
+                            NSWorkspace.shared.activateFileViewerSelecting([url])
+                        }
+                    } catch {
+                        await MainActor.run {
+                            self.gifRecorder = nil
+                            AlertHelper.showGenericError(title: "GIF Export Failed", message: error.localizedDescription)
+                        }
+                    }
+                }
+                return
+            }
+
             Task { @MainActor in
                 guard let rect = await AreaSelector.present() else { return }
-                GIFRecorder().startCapture(rect: rect)
+                let recorder = GIFRecorder()
+                self.gifRecorder = recorder
+                recorder.startCapture(rect: rect)
             }
         }
 
         NotificationCenter.default.addObserver(forName: .initOCRCapture, object: nil, queue: .main) { _ in
             Task { @MainActor in
                 let ocr = OCROverlay()
-                try? await ocr.captureAndRecognize()
+                do {
+                    try await ocr.captureAndRecognize()
+                } catch {
+                    if case CaptureEngineError.cancelled = error { return }
+                    Logger(subsystem: "com.openshot", category: "ocr").error("OCR failed: \(error.localizedDescription)")
+                    AlertHelper.showGenericError(title: "OCR Failed", message: error.localizedDescription)
+                }
             }
         }
 
@@ -519,6 +587,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: - Recording UI
 
+    @MainActor
     private func startRecordingUI() {
         recordingStartTime = Date()
         recordingTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -529,18 +598,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let timeString = String(format: "%02d:%02d", minutes, seconds)
             self.statusItem.button?.title = " \(timeString)"
         }
+
+        let controlsPanel = RecordingControlsPanel()
+        controlsPanel.show(
+            recorder: ScreenRecorder.shared,
+            onStop: { [weak self] in
+                self?.recordScreen()
+            },
+            onRestart: { [weak self] in
+                guard let self else { return }
+                Task { @MainActor in
+                    do {
+                        try await ScreenRecorder.shared.restartRecording()
+                        SoundEffects.playRecordingStart()
+                    } catch {
+                        self.stopRecordingUI()
+                        AlertHelper.showGenericError(title: "Restart Failed", message: error.localizedDescription)
+                    }
+                }
+            }
+        )
+        self.recordingControlsPanel = controlsPanel
     }
 
+    @MainActor
     private func stopRecordingUI() {
         recordingTimer?.invalidate()
         recordingTimer = nil
         recordingStartTime = nil
+        recordingControlsPanel?.dismiss()
+        recordingControlsPanel = nil
         statusItem.button?.title = ""
     }
 
     // MARK: - History Window
 
     private func openHistoryWindow() {
+        if let existing = historyWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
         let historyView = HistoryView()
             .modelContainer(for: CaptureRecord.self)
         let hostingController = NSHostingController(rootView: historyView)
@@ -550,6 +649,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         window.minSize = NSSize(width: 400, height: 300)
         window.setFrameAutosaveName("OpenShot.History")
         window.center()
+
+        self.historyWindow = window
+
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }

@@ -25,9 +25,9 @@ final class CaptureRecord {
     init(
         captureType: String,
         filePath: String,
-        thumbnailPath: String,
-        width: Int,
-        height: Int,
+        thumbnailPath: String = "",
+        width: Int = 0,
+        height: Int = 0,
         fileSize: Int64,
         tags: String = ""
     ) {
@@ -202,6 +202,23 @@ final class CaptureHistoryManager {
 
         logger.info("CaptureRecord saved – type: \(type), extension: \(fileExtension)")
         return record
+    }
+
+    /// Creates a history record for a recording or GIF that was already
+    /// written to disk elsewhere in the app.
+    func saveRecording(url: URL, type: String, modelContext: ModelContext) throws {
+        let attrs = try? FileManager.default.attributesOfItem(atPath: url.path)
+        let fileSize = (attrs?[.size] as? Int64) ?? 0
+        let record = CaptureRecord(
+            captureType: type,
+            filePath: url.path,
+            fileSize: fileSize
+        )
+
+        modelContext.insert(record)
+        try modelContext.save()
+
+        logger.info("CaptureRecord saved – type: \(type), path: \(url.path(percentEncoded: false))")
     }
 
     // MARK: - Fetch Records

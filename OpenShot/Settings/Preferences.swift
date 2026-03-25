@@ -245,8 +245,10 @@ final class Preferences {
 
     var overlayAutoCloseDelay: TimeInterval {
         get {
-            let value = defaults.double(forKey: Keys.overlayAutoCloseDelay)
-            return value > 0 ? value : 5.0
+            if defaults.object(forKey: Keys.overlayAutoCloseDelay) == nil {
+                return 5.0
+            }
+            return defaults.double(forKey: Keys.overlayAutoCloseDelay)
         }
         set {
             defaults.set(newValue, forKey: Keys.overlayAutoCloseDelay)
