@@ -1,10 +1,69 @@
-# OpenShot
+<p align="center">
+  <img src="OpenShot/Resources/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png" width="120" alt="OpenShot icon">
+</p>
 
-A free, open-source screenshot and screen recording tool for macOS. A powerful alternative to CleanShot X and Shottr — built for the community.
+<h1 align="center">OpenShot</h1>
 
-![macOS 14+](https://img.shields.io/badge/macOS-14.0%2B-blue) ![Swift 5.9](https://img.shields.io/badge/Swift-5.9-orange) ![License: MIT](https://img.shields.io/badge/License-MIT-green)
+<p align="center">
+  <strong>Free, open-source screenshot &amp; screen recording for macOS.</strong><br>
+  No subscriptions. No cloud. No tracking.
+</p>
+
+<p align="center">
+  <a href="https://github.com/umutkeltek/OpenShot/actions/workflows/build.yml"><img src="https://github.com/umutkeltek/OpenShot/actions/workflows/build.yml/badge.svg" alt="Build Status"></a>
+  <img src="https://img.shields.io/badge/macOS-14.0%2B-blue" alt="macOS 14+">
+  <img src="https://img.shields.io/badge/Swift-5.9-orange" alt="Swift 5.9">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License"></a>
+</p>
+
+<p align="center">
+  <a href="#features">Features</a> ·
+  <a href="#openshot-vs-cleanshot-x-vs-shottr">Comparison</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#installation">Installation</a> ·
+  <a href="#keyboard-shortcuts">Shortcuts</a> ·
+  <a href="#contributing">Contributing</a>
+</p>
+
+---
+
+## OpenShot vs. CleanShot X vs. Shottr
+
+CleanShot X and Shottr are both excellent, well-built tools — but each is a closed-source
+paid product, and each is missing capabilities the other has. OpenShot combines the best
+ideas from both, free and open source.
+
+| | OpenShot | CleanShot X | Shottr |
+|---|:---:|:---:|:---:|
+| Price | **Free** (MIT) | $29 one-time + $10/mo cloud tiers | $8 one-time |
+| Open source | **Yes** | No | No |
+| Screen recording (MP4/GIF) | **Yes** | Yes | No |
+| Smart text-only blur | **Yes** | No (pixelate only) | Yes |
+| Pixel ruler / measurement | **Yes** | No | Yes |
+| WCAG / APCA contrast checker | **Yes** | No | Yes |
+| Quick Access Overlay (post-capture panel) | **Yes** | Yes | No |
+| Cloud upload | No — by design | Yes (proprietary, paywalled) | S3 (bring your own bucket) |
+| Telemetry / analytics | **None** | — | — |
+| Annotation tools | **17** | ~15 | ~11 |
+
+*Comparison based on each product's public feature pages as of this writing — verify
+before relying on it, since competitor products change frequently.*
 
 ## Features
+
+| | |
+|---|---|
+| 🖼️ **8 capture modes** | Area, window, fullscreen, scrolling, self-timer, freeze-screen, previous-area, All-in-One panel |
+| ✏️ **17 annotation tools** | Arrows, shapes, text, blur/pixelate/smart-blur, spotlight, pixel ruler, color picker, magnifier, and more |
+| 🎥 **Screen recording** | MP4 (H.264) and GIF, webcam overlay, click/keystroke visualization, pause/resume |
+| 🔎 **On-device OCR** | Vision-powered text recognition — nothing ever leaves your Mac |
+| 📌 **Quick Access Overlay** | Copy, save, annotate, pin, or drag-and-drop right after every capture |
+| 🗂️ **Capture history** | SwiftData-backed grid with type filters |
+| ⌨️ **Full automation** | Custom global hotkeys + `openshot://` URL scheme for Alfred, Raycast, Shortcuts |
+| 🔒 **Privacy by design** | Zero network access, zero telemetry, zero external dependencies |
+
+<details>
+<summary><strong>Full feature breakdown</strong> (click to expand)</summary>
 
 ### Capture Modes
 - **Area Capture** — Rubber-band selection with crosshair, magnifier loupe, and dimension labels
@@ -85,56 +144,76 @@ Floating panel appears after every capture with:
 - **First-Run Onboarding** — Permission request + shortcut overview
 - **WCAG Contrast Checker** — AA/AAA pass/fail + APCA values
 
-## Keyboard Shortcuts
+</details>
 
-All shortcuts are customizable in Settings.
+## Screenshots
 
-| Action | Default Shortcut |
-|--------|-----------------|
-| Capture Area | `Shift+Cmd+4` |
-| Capture Window | `Shift+Cmd+5` |
-| Capture Fullscreen | `Shift+Cmd+3` |
-| Scrolling Capture | `Shift+Cmd+6` |
-| Capture Previous Area | `Shift+Cmd+7` |
-| Self-Timer Capture | `Shift+Cmd+8` |
-| All-in-One | `Shift+Cmd+A` |
-| Record Screen | `Shift+Cmd+R` |
-| Record GIF | `Shift+Cmd+G` |
-| OCR — Capture Text | `Shift+Cmd+T` |
-| Restore Recently Closed | `Shift+Cmd+Z` |
-| Toggle Desktop Icons | `Shift+Cmd+D` |
+Real screenshots/GIFs of the app in action are a tracked follow-up, not included yet
+so this section doesn't ship broken image links. Planned:
 
-## Requirements
+- Hero GIF: area capture → annotate → Quick Access Overlay → copy
+- Annotation editor with several tools visible at once
+- Window capture with a gradient background applied
+- Quick Access Overlay, isolated
+- Capture History grid with filters
+- Settings → Shortcuts tab
+- Smart Blur and Pixel Ruler in action (the two features called out in the comparison table above)
 
-- macOS 14.0+ (Sonoma)
-- Xcode 15+ (to build from source)
-- No external dependencies — pure Apple frameworks
+Once captured, drop them in `.github/readme/` and replace this section with the images.
 
-## Building
+## Installation
+
+OpenShot doesn't yet ship a signed, notarized `.app`/`.dmg` — there's no release
+pipeline beyond CI build+test (see [`.github/workflows/build.yml`](.github/workflows/build.yml)).
+Building from source is the supported path today.
+
+**Requirements:** macOS 14.0+ (Sonoma), Xcode 15+. Zero external dependencies —
+pure Apple frameworks.
 
 ```bash
-# Clone
 git clone https://github.com/umutkeltek/OpenShot.git
 cd OpenShot
-
-# Option 1: Xcode
-open OpenShot.xcodeproj
-# Press Cmd+R to build and run
-
-# Option 2: Command line
-xcodebuild -project OpenShot.xcodeproj -scheme OpenShot -configuration Debug build
-open ~/Library/Developer/Xcode/DerivedData/OpenShot-*/Build/Products/Debug/OpenShot.app
+open OpenShot.xcodeproj   # Cmd+R to build and run
 ```
 
-On first launch, grant **Screen Recording** permission when prompted (System Settings > Privacy & Security > Screen Recording).
+Or from the command line: `make build && make run`.
 
-The app lives in your **menu bar** — look for the camera icon. There is no dock icon.
+On first launch, grant **Screen Recording** permission (System Settings → Privacy
+& Security → Screen Recording) — macOS will quit and reopen the app automatically
+after you grant it, which is expected. OpenShot lives in your **menu bar** — there
+is no dock icon.
+
+## Keyboard Shortcuts
+
+Every default shortcut uses **⌃⇧⌘ (Control+Shift+Command)** plus a letter/number —
+deliberately different from macOS's built-in `⇧⌘3/4/5` screenshot shortcuts so
+OpenShot never conflicts with the system. All shortcuts are rebindable in
+Settings → Shortcuts.
+
+| Action | Default Shortcut |
+|--------|-------------------|
+| Capture Area | `⌃⇧⌘4` |
+| Capture Window | `⌃⇧⌘5` |
+| Capture Fullscreen | `⌃⇧⌘3` |
+| Scrolling Capture | `⌃⇧⌘6` |
+| Capture Previous Area | `⌃⇧⌘7` |
+| Self-Timer Capture | `⌃⇧⌘8` |
+| All-in-One Panel | `⌃⇧⌘A` |
+| Record Screen | `⌃⇧⌘R` |
+| Record GIF | `⌃⇧⌘G` |
+| OCR — Capture Text | `⌃⇧⌘T` |
+| Restore Recently Closed | `⌃⇧⌘Z` |
+| Toggle Desktop Icons | `⌃⇧⌘D` |
 
 ## Architecture
 
+<details>
+<summary>Click to expand — module breakdown and framework usage</summary>
+
 ```
 OpenShot/
-├── App/              # App lifecycle, menu bar, permissions, URL scheme, onboarding
+├── App/              # App lifecycle, menu bar, permissions, URL scheme, onboarding,
+│                       coordinators (Capture/Recording/GIF/OCR/History)
 ├── Capture/          # ScreenCaptureKit engine, area/window/fullscreen selectors,
 │                       self-timer, All-in-One panel, window backgrounds
 ├── Annotation/       # NSView canvas, 17 tool types, hand-drawn styles,
@@ -145,12 +224,12 @@ OpenShot/
 ├── OCR/              # Vision framework text recognition
 ├── History/          # SwiftData capture log with grid view
 ├── Settings/         # Preferences, hotkey manager, 6-tab Settings UI
-├── Utilities/        # NSImage extensions, screen info, sound effects,
-│                       desktop manager, color inspector, file namer, DND
+├── Utilities/        # NSImage extensions, screen info, sound effects, clipboard
+│                       service, desktop manager, color inspector, file namer, DND
 └── Resources/        # Info.plist, entitlements, asset catalogs
 ```
 
-**48 Swift files, ~11,000 lines of code.** Zero external dependencies.
+**~55 Swift files, ~12,000 lines of code.** Zero external dependencies.
 
 | Framework | Usage |
 |-----------|-------|
@@ -163,6 +242,10 @@ OpenShot/
 | SwiftUI | Settings, toolbar, overlay, history |
 | SwiftData | Capture history persistence |
 | ServiceManagement | Launch at login |
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full breakdown and data-flow diagrams.
+
+</details>
 
 ## URL Scheme
 
