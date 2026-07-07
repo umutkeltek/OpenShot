@@ -63,6 +63,11 @@
 		7C32AD12C297390663E17B12 /* ClipboardServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE8289482699A7E4655FF7C1 /* ClipboardServiceTests.swift */; };
 		034B1E93CF4B4734E9847722 /* WindowPickerFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0886A9FEE4FF1D5BD9F14DD /* WindowPickerFilterTests.swift */; };
 		32F5C6B68B78FD636D6E137E /* DNDManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C877DDA0965E5EA0D63DB543 /* DNDManagerTests.swift */; };
+		A53ADE5D3476BFCE9E97AEBD /* HistoryWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E68A832B1A5E5EBD8D50AC75 /* HistoryWindowController.swift */; };
+		CB4C42440FA7EB225939E44F /* OCRCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D56132F66E28C9BB45ECA00 /* OCRCoordinator.swift */; };
+		B3B92D40182BAAD9DA72ECDB /* CaptureCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40C2682B2FA446037C36FF7A /* CaptureCoordinator.swift */; };
+		38CB62BEF40CB40F91AB52DC /* RecordingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91D90804F871925B35E0DBFF /* RecordingCoordinator.swift */; };
+		8840E8EAF6654D0E4E26F9F2 /* GIFCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF6779384535C5C1BE75AFB2 /* GIFCoordinator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -136,6 +141,11 @@
 		BE8289482699A7E4655FF7C1 /* ClipboardServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardServiceTests.swift; sourceTree = "<group>"; };
 		F0886A9FEE4FF1D5BD9F14DD /* WindowPickerFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowPickerFilterTests.swift; sourceTree = "<group>"; };
 		C877DDA0965E5EA0D63DB543 /* DNDManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DNDManagerTests.swift; sourceTree = "<group>"; };
+		E68A832B1A5E5EBD8D50AC75 /* HistoryWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryWindowController.swift; sourceTree = "<group>"; };
+		4D56132F66E28C9BB45ECA00 /* OCRCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRCoordinator.swift; sourceTree = "<group>"; };
+		40C2682B2FA446037C36FF7A /* CaptureCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureCoordinator.swift; sourceTree = "<group>"; };
+		91D90804F871925B35E0DBFF /* RecordingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingCoordinator.swift; sourceTree = "<group>"; };
+		BF6779384535C5C1BE75AFB2 /* GIFCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GIFCoordinator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -298,6 +308,7 @@
 		EFC0237F11E42FFC5009A534 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				2035486A681C4B8E71EA0F96 /* Coordinators */,
 				EFC0DCF156C2E06766DC4883 /* AppDelegate.swift */,
 				522899B001BD987A082D199C /* LaunchAtLogin.swift */,
 				C4ECE169A37B8487235C7CB4 /* OnboardingWindow.swift */,
@@ -307,6 +318,18 @@
 				229A9E82F7A5B52C6A7A0A5D /* URLSchemeHandler.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		2035486A681C4B8E71EA0F96 /* Coordinators */ = {
+			isa = PBXGroup;
+			children = (
+				BF6779384535C5C1BE75AFB2 /* GIFCoordinator.swift */,
+				91D90804F871925B35E0DBFF /* RecordingCoordinator.swift */,
+				40C2682B2FA446037C36FF7A /* CaptureCoordinator.swift */,
+				4D56132F66E28C9BB45ECA00 /* OCRCoordinator.swift */,
+				E68A832B1A5E5EBD8D50AC75 /* HistoryWindowController.swift */,
+			);
+			path = Coordinators;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -414,6 +437,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8840E8EAF6654D0E4E26F9F2 /* GIFCoordinator.swift in Sources */,
+				38CB62BEF40CB40F91AB52DC /* RecordingCoordinator.swift in Sources */,
+				B3B92D40182BAAD9DA72ECDB /* CaptureCoordinator.swift in Sources */,
+				CB4C42440FA7EB225939E44F /* OCRCoordinator.swift in Sources */,
+				A53ADE5D3476BFCE9E97AEBD /* HistoryWindowController.swift in Sources */,
 				CC96E6867DDFE717D27C98AE /* ClipboardService.swift in Sources */,
 				295DFB2EB1B45A5431FAE4C9 /* AlertHelper.swift in Sources */,
 				4EC65CA6DD39B6CEA3DF367C /* AllInOnePanel.swift in Sources */,

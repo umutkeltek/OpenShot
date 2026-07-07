@@ -274,6 +274,37 @@ struct PreferencesTests {
     }
 }
 
+@Suite("AllInOneAction Tests")
+struct AllInOneActionTests {
+
+    @Test("AllInOneAction includes selfTimer")
+    func testIncludesSelfTimer() {
+        #expect(AllInOneAction.allCases.contains(.selfTimer))
+    }
+
+    @Test("AllInOneAction display names are non-empty")
+    func testDisplayNames() {
+        for action in AllInOneAction.allCases {
+            #expect(!action.displayName.isEmpty)
+        }
+    }
+
+    @Test("AllInOneAction system image names are non-empty")
+    func testSystemImageNames() {
+        for action in AllInOneAction.allCases {
+            #expect(!action.systemImage.isEmpty)
+        }
+    }
+
+    @Test("AllInOneAction shortcut hints are non-empty and use the Control modifier")
+    func testShortcutHints() {
+        for action in AllInOneAction.allCases {
+            #expect(!action.shortcutHint.isEmpty)
+            #expect(action.shortcutHint.hasPrefix("⌃"))
+        }
+    }
+}
+
 @Suite("CaptureEngineError Tests")
 struct CaptureEngineErrorTests {
 

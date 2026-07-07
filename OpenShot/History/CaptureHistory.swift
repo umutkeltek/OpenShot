@@ -67,14 +67,16 @@ final class CaptureHistoryManager {
         thumbnailsDirectory = appSupport
             .appendingPathComponent("OpenShot/Thumbnails", isDirectory: true)
 
-        try? FileManager.default.createDirectory(
-            at: capturesDirectory,
-            withIntermediateDirectories: true
-        )
-        try? FileManager.default.createDirectory(
-            at: thumbnailsDirectory,
-            withIntermediateDirectories: true
-        )
+        do {
+            try FileManager.default.createDirectory(at: capturesDirectory, withIntermediateDirectories: true)
+        } catch {
+            logger.error("Failed to create captures directory: \(error.localizedDescription)")
+        }
+        do {
+            try FileManager.default.createDirectory(at: thumbnailsDirectory, withIntermediateDirectories: true)
+        } catch {
+            logger.error("Failed to create thumbnails directory: \(error.localizedDescription)")
+        }
 
         do {
             self.modelContainer = try ModelContainer(for: CaptureRecord.self)
@@ -238,7 +240,11 @@ final class CaptureHistoryManager {
     ///
     /// If the move fails, the recording is archived at its original temp URL
     /// instead of throwing — losing the recording entirely would be worse
-    /// than leaving it in temp.
+    /// than leaving it in temp. Likewise, if the history record itself fails
+    /// to save, that's logged rather than thrown — by that point the file
+    /// has already been physically relocated (or not), and callers need that
+    /// real, on-disk location back regardless of whether the history entry
+    /// could be recorded.
     @discardableResult
     func archiveRecording(
         tempURL: URL,
@@ -258,7 +264,11 @@ final class CaptureHistoryManager {
             logger.warning("Failed to move \(type) to save location, archiving from temp instead: \(error.localizedDescription)")
         }
 
-        try saveRecording(url: finalURL, type: type, modelContext: modelContext)
+        do {
+            try saveRecording(url: finalURL, type: type, modelContext: modelContext)
+        } catch {
+            logger.warning("Failed to save \(type) history record: \(error.localizedDescription)")
+        }
         return finalURL
     }
 

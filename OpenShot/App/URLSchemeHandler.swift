@@ -16,34 +16,50 @@ class URLSchemeHandler: NSObject {
         switch command {
         case "capture-area":
             confirmAndExecute(message: "An external app wants to capture your screen. Allow?") {
-                NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.area])
+                Task { @MainActor in
+                    await CaptureCoordinator.shared.performCapture(mode: .area)
+                }
             }
         case "capture-window":
             confirmAndExecute(message: "An external app wants to capture your screen. Allow?") {
-                NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.window])
+                Task { @MainActor in
+                    await CaptureCoordinator.shared.performCapture(mode: .window)
+                }
             }
         case "capture-fullscreen":
             confirmAndExecute(message: "An external app wants to capture your screen. Allow?") {
-                NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.fullscreen])
+                Task { @MainActor in
+                    await CaptureCoordinator.shared.performCapture(mode: .fullscreen)
+                }
             }
         case "scrolling-capture":
             confirmAndExecute(message: "An external app wants to capture your screen. Allow?") {
-                NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.scrolling])
+                Task { @MainActor in
+                    await CaptureCoordinator.shared.performCapture(mode: .scrolling)
+                }
             }
         case "capture-text":
             confirmAndExecute(message: "An external app wants to capture your screen. Allow?") {
-                NotificationCenter.default.post(name: .initOCRCapture, object: nil)
+                Task { @MainActor in
+                    await OCRCoordinator.shared.captureText()
+                }
             }
         case "record-screen":
             confirmAndExecute(message: "An external app wants to start a recording. Allow?") {
-                NotificationCenter.default.post(name: .initRecordScreen, object: nil)
+                Task { @MainActor in
+                    await RecordingCoordinator.shared.toggleRecording()
+                }
             }
         case "record-gif":
             confirmAndExecute(message: "An external app wants to start a recording. Allow?") {
-                NotificationCenter.default.post(name: .initRecordGIF, object: nil)
+                Task { @MainActor in
+                    await GIFCoordinator.shared.toggleGIFRecording()
+                }
             }
         case "open-history":
-            NotificationCenter.default.post(name: .showCaptureHistory, object: nil)
+            Task { @MainActor in
+                HistoryWindowController.shared.show()
+            }
         case "toggle-desktop-icons":
             DesktopManager.toggleDesktopIcons()
         case "restore-recently-closed":

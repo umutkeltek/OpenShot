@@ -110,18 +110,26 @@ final class Preferences {
 
     var saveLocation: URL {
         get {
-            if let data = defaults.data(forKey: Keys.saveLocation),
-               let url = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSURL.self, from: data) as URL? {
-                return url
+            if let data = defaults.data(forKey: Keys.saveLocation) {
+                do {
+                    if let url = try NSKeyedUnarchiver.unarchivedObject(ofClass: NSURL.self, from: data) as URL? {
+                        return url
+                    }
+                } catch {
+                    logger.warning("Failed to decode saved save-location, falling back to Desktop: \(error.localizedDescription)")
+                }
             }
             return FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
                 ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Desktop")
         }
         set {
-            if let data = try? NSKeyedArchiver.archivedData(withRootObject: newValue as NSURL, requiringSecureCoding: true) {
+            do {
+                let data = try NSKeyedArchiver.archivedData(withRootObject: newValue as NSURL, requiringSecureCoding: true)
                 defaults.set(data, forKey: Keys.saveLocation)
+                logger.debug("Save location updated to \(newValue.path(percentEncoded: false))")
+            } catch {
+                logger.error("Failed to persist save location \(newValue.path(percentEncoded: false)): \(error.localizedDescription)")
             }
-            logger.debug("Save location updated to \(newValue.path(percentEncoded: false))")
         }
     }
 

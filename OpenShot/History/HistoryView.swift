@@ -199,10 +199,14 @@ struct HistoryView: View {
     }
 
     private func deleteRecord(_ record: CaptureRecord) {
-        try? CaptureHistoryManager.shared.deleteRecord(
-            record,
-            modelContext: modelContext
-        )
+        do {
+            try CaptureHistoryManager.shared.deleteRecord(record, modelContext: modelContext)
+        } catch {
+            Task { @MainActor in
+                ToastManager.show(icon: "exclamationmark.triangle", message: "Delete failed", detail: error.localizedDescription)
+            }
+            return
+        }
         if selectedRecordID == record.id {
             selectedRecordID = nil
         }

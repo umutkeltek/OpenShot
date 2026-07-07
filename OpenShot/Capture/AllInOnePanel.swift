@@ -12,7 +12,7 @@ import os
 
 enum AllInOneAction: String, CaseIterable, Identifiable {
     case captureArea, captureWindow, captureFullscreen, scrollingCapture
-    case recordScreen, recordGIF, ocrText
+    case selfTimer, recordScreen, recordGIF, ocrText
 
     var id: String { rawValue }
 
@@ -22,6 +22,7 @@ enum AllInOneAction: String, CaseIterable, Identifiable {
         case .captureWindow: "Capture Window"
         case .captureFullscreen: "Fullscreen"
         case .scrollingCapture: "Scrolling"
+        case .selfTimer: "Self-Timer"
         case .recordScreen: "Record Screen"
         case .recordGIF: "Record GIF"
         case .ocrText: "OCR Text"
@@ -34,21 +35,25 @@ enum AllInOneAction: String, CaseIterable, Identifiable {
         case .captureWindow: "macwindow"
         case .captureFullscreen: "rectangle.inset.filled"
         case .scrollingCapture: "arrow.up.and.down.text.horizontal"
+        case .selfTimer: "timer"
         case .recordScreen: "record.circle"
         case .recordGIF: "photo.stack"
         case .ocrText: "text.viewfinder"
         }
     }
 
+    // Uses Ctrl+Shift+Cmd to match HotkeyManager.defaultBindings, which
+    // deliberately avoids macOS's own Shift+Cmd+3/4/5 screenshot shortcuts.
     var shortcutHint: String {
         switch self {
-        case .captureArea: "⇧⌘4"
-        case .captureWindow: "⇧⌘5"
-        case .captureFullscreen: "⇧⌘3"
-        case .scrollingCapture: "⇧⌘6"
-        case .recordScreen: "⇧⌘R"
-        case .recordGIF: "⇧⌘G"
-        case .ocrText: "⇧⌘T"
+        case .captureArea: "⌃⇧⌘4"
+        case .captureWindow: "⌃⇧⌘5"
+        case .captureFullscreen: "⌃⇧⌘3"
+        case .scrollingCapture: "⌃⇧⌘6"
+        case .selfTimer: "⌃⇧⌘8"
+        case .recordScreen: "⌃⇧⌘R"
+        case .recordGIF: "⌃⇧⌘G"
+        case .ocrText: "⌃⇧⌘T"
         }
     }
 }
@@ -124,19 +129,37 @@ class AllInOnePanel {
     private static func handleAction(_ action: AllInOneAction) {
         switch action {
         case .captureArea:
-            NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.area])
+            Task { @MainActor in
+                await CaptureCoordinator.shared.performCapture(mode: .area)
+            }
         case .captureWindow:
-            NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.window])
+            Task { @MainActor in
+                await CaptureCoordinator.shared.performCapture(mode: .window)
+            }
         case .captureFullscreen:
-            NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.fullscreen])
+            Task { @MainActor in
+                await CaptureCoordinator.shared.performCapture(mode: .fullscreen)
+            }
         case .scrollingCapture:
-            NotificationCenter.default.post(name: .initCapture, object: nil, userInfo: ["mode": CaptureMode.scrolling])
+            Task { @MainActor in
+                await CaptureCoordinator.shared.performCapture(mode: .scrolling)
+            }
+        case .selfTimer:
+            Task { @MainActor in
+                await CaptureCoordinator.shared.captureWithSelfTimer(mode: .fullscreen)
+            }
         case .recordScreen:
-            NotificationCenter.default.post(name: .initRecordScreen, object: nil)
+            Task { @MainActor in
+                await RecordingCoordinator.shared.toggleRecording()
+            }
         case .recordGIF:
-            NotificationCenter.default.post(name: .initRecordGIF, object: nil)
+            Task { @MainActor in
+                await GIFCoordinator.shared.toggleGIFRecording()
+            }
         case .ocrText:
-            NotificationCenter.default.post(name: .initOCRCapture, object: nil)
+            Task { @MainActor in
+                await OCRCoordinator.shared.captureText()
+            }
         }
     }
 }

@@ -1,7 +1,5 @@
 import AppKit
 import SwiftUI
-import ScreenCaptureKit
-import SwiftData
 import os
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -12,10 +10,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let hotkeyManager = HotkeyManager.shared
     private let preferences = Preferences.shared
     private let logger = Logger(subsystem: "com.openshot.app", category: "AppDelegate")
-    private var recordingTimer: Timer?
-    private var recordingStartTime: Date?
-    private var recordingControlsPanel: RecordingControlsPanel?
-    private var gifRecorder: GIFRecorder?
 
     // Menu items that need dynamic enable/disable
     private var restoreItem: NSMenuItem?
@@ -26,7 +20,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
         setupHotkeyCallbacks()
-        setupNotificationObservers()
+        RecordingCoordinator.shared.statusItemTitleUpdate = { [weak self] title in
+            self?.statusItem.button?.title = title
+        }
         hotkeyManager.registerAll()
         Permissions.ensureScreenRecording()
         OnboardingWindowManager.showIfNeeded()
@@ -37,9 +33,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         hotkeyManager.unregisterAll()
-        NotificationCenter.default.removeObserver(self)
-        recordingTimer?.invalidate()
-        recordingTimer = nil
         logger.info("OpenShot terminating")
     }
 
@@ -242,132 +235,64 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func captureArea() {
         logger.info("Capture Area triggered")
-        guard Permissions.checkScreenRecording() else {
-            Permissions.requestScreenRecording()
-            return
-        }
         Task { @MainActor in
-            NotificationCenter.default.post(
-                name: .initCapture,
-                object: nil,
-                userInfo: ["mode": CaptureMode.area]
-            )
+            await CaptureCoordinator.shared.performCapture(mode: .area)
         }
     }
 
     @objc private func captureWindow() {
         logger.info("Capture Window triggered")
-        guard Permissions.checkScreenRecording() else {
-            Permissions.requestScreenRecording()
-            return
-        }
         Task { @MainActor in
-            NotificationCenter.default.post(
-                name: .initCapture,
-                object: nil,
-                userInfo: ["mode": CaptureMode.window]
-            )
+            await CaptureCoordinator.shared.performCapture(mode: .window)
         }
     }
 
     @objc private func captureFullscreen() {
         logger.info("Capture Fullscreen triggered")
-        guard Permissions.checkScreenRecording() else {
-            Permissions.requestScreenRecording()
-            return
-        }
         Task { @MainActor in
-            NotificationCenter.default.post(
-                name: .initCapture,
-                object: nil,
-                userInfo: ["mode": CaptureMode.fullscreen]
-            )
+            await CaptureCoordinator.shared.performCapture(mode: .fullscreen)
         }
     }
 
     @objc private func captureScrolling() {
         logger.info("Scrolling Capture triggered")
-        guard Permissions.checkScreenRecording() else {
-            Permissions.requestScreenRecording()
-            return
-        }
         Task { @MainActor in
-            NotificationCenter.default.post(
-                name: .initCapture,
-                object: nil,
-                userInfo: ["mode": CaptureMode.scrolling]
-            )
+            await CaptureCoordinator.shared.performCapture(mode: .scrolling)
         }
     }
 
     @objc private func recordScreen() {
         logger.info("Record Screen triggered")
-        guard Permissions.checkScreenRecording() else {
-            Permissions.requestScreenRecording()
-            return
-        }
         Task { @MainActor in
-            NotificationCenter.default.post(name: .initRecordScreen, object: nil)
+            await RecordingCoordinator.shared.toggleRecording()
         }
     }
 
     @objc private func recordGIF() {
         logger.info("Record GIF triggered")
-        guard Permissions.checkScreenRecording() else {
-            Permissions.requestScreenRecording()
-            return
-        }
         Task { @MainActor in
-            NotificationCenter.default.post(name: .initRecordGIF, object: nil)
+            await GIFCoordinator.shared.toggleGIFRecording()
         }
     }
 
     @objc private func captureText() {
         logger.info("OCR Capture Text triggered")
-        guard Permissions.checkScreenRecording() else {
-            Permissions.requestScreenRecording()
-            return
-        }
         Task { @MainActor in
-            NotificationCenter.default.post(name: .initOCRCapture, object: nil)
+            await OCRCoordinator.shared.captureText()
         }
     }
 
     @objc private func capturePreviousArea() {
         logger.info("Capture Previous Area triggered")
-        guard Permissions.checkScreenRecording() else {
-            Permissions.requestScreenRecording()
-            return
-        }
         Task { @MainActor in
-            do {
-                let image = try await CaptureEngine.shared.capturePreviousArea()
-                CaptureEngine.shared.presentResult(image)
-            } catch {
-                logger.warning("Capture Previous Area failed: \(error.localizedDescription)")
-                if let osError = error as? OpenShotError {
-                    AlertHelper.showError(osError)
-                }
-            }
+            await CaptureCoordinator.shared.capturePreviousArea()
         }
     }
 
     @objc private func selfTimerCapture() {
         logger.info("Self-Timer Capture triggered")
-        guard Permissions.checkScreenRecording() else {
-            Permissions.requestScreenRecording()
-            return
-        }
         Task { @MainActor in
-            do {
-                let image = try await CaptureEngine.shared.captureWithSelfTimer(mode: .fullscreen)
-                CaptureEngine.shared.presentResult(image)
-            } catch {
-                logger.warning("Self-Timer Capture failed: \(error.localizedDescription)")
-                if let osError = error as? OpenShotError {
-                    AlertHelper.showError(osError)
-                }
-            }
+            await CaptureCoordinator.shared.captureWithSelfTimer(mode: .fullscreen)
         }
     }
 
@@ -392,11 +317,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func showHistory() {
         logger.info("Show History triggered")
-        NotificationCenter.default.post(name: .showCaptureHistory, object: nil)
+        Task { @MainActor in
+            HistoryWindowController.shared.show()
+        }
     }
 
     private var settingsWindow: NSWindow?
-    private var historyWindow: NSWindow?
 
     @objc private func showSettings() {
         // If settings window already exists, just bring it to front.
@@ -427,248 +353,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
-    }
-
-    // MARK: - Notification Observers
-
-    private func setupNotificationObservers() {
-        NotificationCenter.default.addObserver(forName: .initCapture, object: nil, queue: .main) { [weak self] notification in
-            guard let self else { return }
-            guard let mode = notification.userInfo?["mode"] as? CaptureMode else { return }
-            Task { @MainActor in
-                do {
-                    let engine = CaptureEngine.shared
-                    let image: NSImage
-
-                    if self.preferences.hideDesktopIconsDuringCapture {
-                        image = try await DesktopManager.withHiddenIcons {
-                            switch mode {
-                            case .area: return try await engine.captureArea()
-                            case .window: return try await engine.captureWindow()
-                            case .fullscreen: return try await engine.captureFullscreen()
-                            case .scrolling: return try await engine.captureScrolling()
-                            }
-                        }
-                    } else {
-                        switch mode {
-                        case .area: image = try await engine.captureArea()
-                        case .window: image = try await engine.captureWindow()
-                        case .fullscreen: image = try await engine.captureFullscreen()
-                        case .scrolling: image = try await engine.captureScrolling()
-                        }
-                    }
-
-                    engine.presentResult(image)
-                } catch {
-                    if case CaptureEngineError.cancelled = error { return }
-                    Logger(subsystem: "com.openshot", category: "capture").error("Capture failed: \(error.localizedDescription)")
-                    if let osError = error as? OpenShotError {
-                        AlertHelper.showError(osError)
-                    } else {
-                        AlertHelper.showGenericError(title: "Capture Failed", message: error.localizedDescription)
-                    }
-                }
-            }
-        }
-
-        NotificationCenter.default.addObserver(forName: .initRecordScreen, object: nil, queue: .main) { [weak self] _ in
-            guard let self else { return }
-            Task { @MainActor in
-                if ScreenRecorder.shared.isRecording {
-                    // Stop recording
-                    do {
-                        let url = try await ScreenRecorder.shared.stopRecording()
-                        self.stopRecordingUI()
-                        SoundEffects.playRecordingStop()
-
-                        let preferences = Preferences.shared
-                        let saveDir = preferences.saveLocation
-                        try? FileManager.default.createDirectory(at: saveDir, withIntermediateDirectories: true)
-
-                        let filename = url.lastPathComponent
-                        let destinationURL = saveDir.appendingPathComponent(filename)
-                        do {
-                            try FileManager.default.moveItem(at: url, to: destinationURL)
-                        } catch {
-                            self.logger.warning("Failed to move recording to save location: \(error.localizedDescription)")
-                        }
-
-                        let finalURL = FileManager.default.fileExists(atPath: destinationURL.path) ? destinationURL : url
-                        self.logger.info("Recording saved to \(finalURL.path)")
-                        ToastManager.show(icon: "checkmark.circle.fill", message: "Recording saved", detail: finalURL.lastPathComponent)
-
-                        do {
-                            let context = try CaptureHistoryManager.shared.makeContext()
-                            try CaptureHistoryManager.shared.saveRecording(
-                                url: finalURL,
-                                type: "recording",
-                                modelContext: context
-                            )
-                        } catch {
-                            self.logger.warning("Failed to save recording to history: \(error.localizedDescription)")
-                        }
-                    } catch {
-                        self.stopRecordingUI()
-                        Logger(subsystem: "com.openshot", category: "recorder").error("Stop recording failed: \(error.localizedDescription)")
-                        AlertHelper.showGenericError(title: "Recording Failed", message: error.localizedDescription)
-                    }
-                } else {
-                    // Start recording
-                    do {
-                        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
-                        guard let display = content.displays.first else { return }
-                        let filter = SCContentFilter(display: display, excludingWindows: [])
-                        try await ScreenRecorder.shared.startRecording(filter: filter)
-                        self.startRecordingUI()
-                        SoundEffects.playRecordingStart()
-                    } catch {
-                        Logger(subsystem: "com.openshot", category: "recorder").error("Recording failed: \(error.localizedDescription)")
-                        AlertHelper.showGenericError(title: "Recording Failed", message: error.localizedDescription)
-                    }
-                }
-            }
-        }
-
-        NotificationCenter.default.addObserver(forName: .initRecordGIF, object: nil, queue: .main) { [weak self] _ in
-            guard let self else { return }
-
-            if let activeRecorder = self.gifRecorder, activeRecorder.isRecording {
-                Task {
-                    do {
-                        let url = try await activeRecorder.stopCapture()
-                        await MainActor.run {
-                            self.gifRecorder = nil
-                            ToastManager.show(icon: "checkmark.circle.fill", message: "GIF saved", detail: url.lastPathComponent)
-
-                            do {
-                                let context = try CaptureHistoryManager.shared.makeContext()
-                                try CaptureHistoryManager.shared.saveRecording(
-                                    url: url,
-                                    type: "gif",
-                                    modelContext: context
-                                )
-                            } catch {
-                                self.logger.warning("Failed to save GIF to history: \(error.localizedDescription)")
-                            }
-
-                            NSWorkspace.shared.activateFileViewerSelecting([url])
-                        }
-                    } catch {
-                        await MainActor.run {
-                            self.gifRecorder = nil
-                            AlertHelper.showGenericError(title: "GIF Export Failed", message: error.localizedDescription)
-                        }
-                    }
-                }
-                return
-            }
-
-            Task { @MainActor in
-                guard let rect = await AreaSelector.present() else { return }
-                let recorder = GIFRecorder()
-                self.gifRecorder = recorder
-                recorder.startCapture(rect: rect)
-            }
-        }
-
-        NotificationCenter.default.addObserver(forName: .initOCRCapture, object: nil, queue: .main) { _ in
-            Task { @MainActor in
-                let ocr = OCROverlay()
-                do {
-                    try await ocr.captureAndRecognize()
-                } catch {
-                    if case CaptureEngineError.cancelled = error { return }
-                    Logger(subsystem: "com.openshot", category: "ocr").error("OCR failed: \(error.localizedDescription)")
-                    AlertHelper.showGenericError(title: "OCR Failed", message: error.localizedDescription)
-                }
-            }
-        }
-
-        NotificationCenter.default.addObserver(forName: .showCaptureHistory, object: nil, queue: .main) { [weak self] _ in
-            self?.openHistoryWindow()
-        }
-    }
-
-    // MARK: - Recording UI
-
-    @MainActor
-    private func startRecordingUI() {
-        recordingStartTime = Date()
-        recordingTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self, let start = self.recordingStartTime else { return }
-            let elapsed = Int(Date().timeIntervalSince(start))
-            let minutes = elapsed / 60
-            let seconds = elapsed % 60
-            let timeString = String(format: "%02d:%02d", minutes, seconds)
-            self.statusItem.button?.title = " \(timeString)"
-        }
-
-        let controlsPanel = RecordingControlsPanel()
-        controlsPanel.show(
-            recorder: ScreenRecorder.shared,
-            onStop: { [weak self] in
-                self?.recordScreen()
-            },
-            onRestart: { [weak self] in
-                guard let self else { return }
-                Task { @MainActor in
-                    do {
-                        try await ScreenRecorder.shared.restartRecording()
-                        SoundEffects.playRecordingStart()
-                    } catch {
-                        self.stopRecordingUI()
-                        AlertHelper.showGenericError(title: "Restart Failed", message: error.localizedDescription)
-                    }
-                }
-            }
-        )
-        self.recordingControlsPanel = controlsPanel
-    }
-
-    @MainActor
-    private func stopRecordingUI() {
-        recordingTimer?.invalidate()
-        recordingTimer = nil
-        recordingStartTime = nil
-        recordingControlsPanel?.dismiss()
-        recordingControlsPanel = nil
-        statusItem.button?.title = ""
-    }
-
-    // MARK: - History Window
-
-    private func openHistoryWindow() {
-        if let existing = historyWindow, existing.isVisible {
-            existing.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-
-        let container: ModelContainer
-        do {
-            container = try CaptureHistoryManager.shared.sharedContainer
-        } catch {
-            logger.error("Failed to obtain shared ModelContainer for History: \(error.localizedDescription)")
-            Task { @MainActor in
-                AlertHelper.showGenericError(title: "History Unavailable", message: error.localizedDescription)
-            }
-            return
-        }
-
-        let historyView = HistoryView()
-            .modelContainer(container)
-        let hostingController = NSHostingController(rootView: historyView)
-        let window = NSWindow(contentViewController: hostingController)
-        window.title = "Capture History"
-        window.setContentSize(NSSize(width: 700, height: 500))
-        window.minSize = NSSize(width: 400, height: 300)
-        window.setFrameAutosaveName("OpenShot.History")
-        window.center()
-
-        self.historyWindow = window
-
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
     }
 
     // MARK: - Launch Cleanup
@@ -722,14 +406,4 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
     }
-}
-
-// MARK: - Notification Names
-
-extension Notification.Name {
-    static let initCapture = Notification.Name("com.openshot.initCapture")
-    static let initRecordScreen = Notification.Name("com.openshot.initRecordScreen")
-    static let initRecordGIF = Notification.Name("com.openshot.initRecordGIF")
-    static let initOCRCapture = Notification.Name("com.openshot.initOCRCapture")
-    static let showCaptureHistory = Notification.Name("com.openshot.showCaptureHistory")
 }

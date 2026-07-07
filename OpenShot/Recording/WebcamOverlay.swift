@@ -18,13 +18,26 @@ class WebcamOverlay {
         let session = AVCaptureSession()
         session.sessionPreset = .medium
 
-        guard let camera = AVCaptureDevice.default(for: .video),
-              let input = try? AVCaptureDeviceInput(device: camera) else {
+        guard let camera = AVCaptureDevice.default(for: .video) else {
             logger.warning("No camera available for webcam overlay")
+            ToastManager.show(icon: "video.slash", message: "No camera found", detail: "Webcam overlay needs a connected camera")
             return
         }
 
-        guard session.canAddInput(input) else { return }
+        let input: AVCaptureDeviceInput
+        do {
+            input = try AVCaptureDeviceInput(device: camera)
+        } catch {
+            logger.warning("Failed to create camera input: \(error.localizedDescription)")
+            ToastManager.show(icon: "video.slash", message: "Webcam unavailable", detail: error.localizedDescription)
+            return
+        }
+
+        guard session.canAddInput(input) else {
+            logger.warning("Session cannot add camera input")
+            ToastManager.show(icon: "video.slash", message: "Webcam unavailable", detail: "Camera input could not be added")
+            return
+        }
         session.addInput(input)
 
         let preview = AVCaptureVideoPreviewLayer(session: session)
