@@ -176,10 +176,12 @@ struct HistoryView: View {
     }
 
     private func copyRecord(_ record: CaptureRecord) {
-        if let image = NSImage(contentsOfFile: record.filePath) {
-            let pasteboard = NSPasteboard.general
-            pasteboard.clearContents()
-            pasteboard.writeObjects([image])
+        Task { @MainActor in
+            guard let image = NSImage(contentsOfFile: record.filePath) else {
+                ToastManager.show(icon: "exclamationmark.triangle", message: "Copy failed", detail: "File not found")
+                return
+            }
+            ClipboardService.copyImage(image)
         }
     }
 

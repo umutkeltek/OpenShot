@@ -289,23 +289,8 @@ final class AnnotationWindow: NSWindow {
             logger.error("Failed to composite annotated image for copying")
             return
         }
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-
-        // Write image data (TIFF) for apps that accept image paste
-        pasteboard.writeObjects([composited])
-
-        // Also write a temp file URL for apps that accept file URLs
-        if let pngData = composited.pngData() {
-            let tempURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent("OpenShot_clipboard_\(UUID().uuidString).png")
-            try? pngData.write(to: tempURL)
-            pasteboard.setString(tempURL.absoluteString, forType: .fileURL)
-        }
-
-        logger.info("Annotated image copied to clipboard (image + file URL)")
         Task { @MainActor in
-            ToastManager.show(icon: "checkmark.circle.fill", message: "Copied to clipboard")
+            ClipboardService.copyImage(composited)
         }
     }
 

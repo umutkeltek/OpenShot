@@ -9,6 +9,48 @@ import AppKit
 import ScreenCaptureKit
 import os
 
+// MARK: - CandidateWindow / WindowPickerFilter
+
+/// Abstracts the properties of `SCWindow` the picker filter cares about, so
+/// the filtering logic is unit-testable without a mockable `SCWindow`
+/// (`SCWindow` has no public initializer).
+protocol CandidateWindow {
+    var windowTitle: String? { get }
+    var windowFrame: CGRect { get }
+    var windowLayerValue: Int { get }
+    var owningBundleIdentifier: String? { get }
+}
+
+extension SCWindow: CandidateWindow {
+    var windowTitle: String? { title }
+    var windowFrame: CGRect { frame }
+    var windowLayerValue: Int { windowLayer }
+    var owningBundleIdentifier: String? { owningApplication?.bundleIdentifier }
+}
+
+/// Decides which windows should be offered by the window picker. Excludes
+/// this app's own windows (by bundle identifier, not a fragile title-string
+/// match), windows too small to be a meaningful capture target, and
+/// non-standard-layer windows (menu bar, dock, system chrome) — this
+/// satisfies the "exclude our overlay and tiny/system windows" intent
+/// without over-excluding legitimate windows that happen to have an empty
+/// title (e.g. borderless/custom-chrome apps).
+enum WindowPickerFilter {
+    static let minimumDimension: CGFloat = 40
+
+    static func isCapturable<W: CandidateWindow>(_ window: W, ownBundleID: String) -> Bool {
+        if window.owningBundleIdentifier == ownBundleID { return false }
+        guard window.windowFrame.width >= minimumDimension,
+              window.windowFrame.height >= minimumDimension else { return false }
+        guard window.windowLayerValue == 0 else { return false }
+        return true
+    }
+
+    static func filtered<W: CandidateWindow>(_ windows: [W], ownBundleID: String) -> [W] {
+        windows.filter { isCapturable($0, ownBundleID: ownBundleID) }
+    }
+}
+
 // MARK: - WindowPicker
 
 /// Coordinates window picking across all displays.
@@ -23,11 +65,8 @@ final class WindowPicker {
         let windows: [SCWindow]
         do {
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
-            windows = content.windows.filter { window in
-                // Exclude our own overlay and windows that have no title / are tiny.
-                guard let title = window.title, !title.isEmpty else { return true }
-                return !title.contains("WindowPickerOverlay")
-            }
+            let ownBundleID = Bundle.main.bundleIdentifier ?? "com.openshot.app"
+            windows = WindowPickerFilter.filtered(content.windows, ownBundleID: ownBundleID)
         } catch {
             logger.error("Failed to enumerate windows: \(error.localizedDescription)")
             return nil

@@ -13,12 +13,23 @@ struct Permissions {
         return hasAccess
     }
 
+    /// Whether the user has already seen the one-time "app will quit and
+    /// reopen" warning shown before the very first system permission prompt.
+    private static let hasShownRelaunchPrimerKey = "pref_hasShownScreenRecordingPrimer"
+
     /// Requests screen recording permission from the user.
-    /// On first request, presents the system permission dialog.
+    /// On first request, warns that macOS will quit the app after access is
+    /// granted (standard TCC behavior — otherwise it looks like a crash),
+    /// then presents the system permission dialog.
     /// On subsequent requests (when already denied), shows an alert
     /// guiding the user to System Settings.
     static func requestScreenRecording() {
         logger.info("Requesting screen recording permission")
+
+        if !UserDefaults.standard.bool(forKey: hasShownRelaunchPrimerKey) {
+            UserDefaults.standard.set(true, forKey: hasShownRelaunchPrimerKey)
+            showRelaunchPrimerAlert()
+        }
 
         // CGRequestScreenCaptureAccess() only shows the system prompt once.
         // If already denied, it returns false silently. In that case, show
@@ -29,6 +40,20 @@ struct Permissions {
                 showPermissionAlert()
             }
         }
+    }
+
+    /// Warns the user, before the system permission dialog appears for the
+    /// first time, that granting Screen Recording access will cause macOS to
+    /// automatically quit the app (it must relaunch to pick up the new
+    /// privacy state) — without this warning, the quit looks like a crash.
+    private static func showRelaunchPrimerAlert() {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = "Screen Recording Permission Needed"
+        alert.informativeText = "OpenShot needs Screen Recording access to capture your screen. After you click Allow in the next dialog, macOS will quit OpenShot automatically — just reopen it and you're all set."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Continue")
+        alert.runModal()
     }
 
     /// Shows the existing permission alert via AlertHelper.

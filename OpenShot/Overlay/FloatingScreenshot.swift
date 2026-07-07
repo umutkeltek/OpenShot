@@ -284,12 +284,8 @@ final class FloatingScreenshot: NSPanel {
     }
 
     @objc private func copyImageToClipboard(_ sender: NSMenuItem) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.writeObjects([screenshotImage])
-        logger.info("Floating screenshot image copied to clipboard")
         Task { @MainActor in
-            ToastManager.show(icon: "checkmark.circle.fill", message: "Copied to clipboard")
+            ClipboardService.copyImage(screenshotImage)
         }
     }
 

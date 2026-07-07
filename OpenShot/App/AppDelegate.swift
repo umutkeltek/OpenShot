@@ -644,8 +644,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
 
+        let container: ModelContainer
+        do {
+            container = try CaptureHistoryManager.shared.sharedContainer
+        } catch {
+            logger.error("Failed to obtain shared ModelContainer for History: \(error.localizedDescription)")
+            Task { @MainActor in
+                AlertHelper.showGenericError(title: "History Unavailable", message: error.localizedDescription)
+            }
+            return
+        }
+
         let historyView = HistoryView()
-            .modelContainer(for: CaptureRecord.self)
+            .modelContainer(container)
         let hostingController = NSHostingController(rootView: historyView)
         let window = NSWindow(contentViewController: hostingController)
         window.title = "Capture History"

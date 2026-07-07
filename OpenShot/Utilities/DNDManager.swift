@@ -6,9 +6,26 @@
 import AppKit
 import os
 
+/// A thread-safe "fire at most once" gate. `Process.terminationHandler`
+/// isn't guaranteed to run on the main thread, so a plain `Bool` flag mutated
+/// from it is a data race; this serializes access with an unfair lock.
+final class OnceGate: @unchecked Sendable {
+    private let lock = OSAllocatedUnfairLock(initialState: false)
+
+    /// Returns `true` the first time it's called, `false` on every call after.
+    @discardableResult
+    func fireOnce() -> Bool {
+        lock.withLock { fired in
+            guard !fired else { return false }
+            fired = true
+            return true
+        }
+    }
+}
+
 struct DNDManager {
     private static let logger = Logger(subsystem: "com.openshot", category: "dnd")
-    private static var hasWarnedAboutDND = false
+    private static let warnGate = OnceGate()
 
     /// Enable Do Not Disturb via the Shortcuts CLI. Runs asynchronously
     /// to avoid blocking the cooperative thread pool.
@@ -55,8 +72,7 @@ struct DNDManager {
     }
 
     private static func showDNDWarningOnce() {
-        guard !hasWarnedAboutDND else { return }
-        hasWarnedAboutDND = true
+        guard warnGate.fireOnce() else { return }
         DispatchQueue.main.async {
             ToastManager.show(icon: "moon.slash", message: "DND not available", detail: "Create 'Enable DND' shortcut in Shortcuts app")
         }

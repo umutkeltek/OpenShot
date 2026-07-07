@@ -9,7 +9,6 @@ struct OpenShotApp: App {
         Settings {
             SettingsView()
         }
-        .modelContainer(for: CaptureRecord.self)
     }
 
     init() {

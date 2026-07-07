@@ -51,7 +51,9 @@ final class CaptureHistoryManager {
     static let shared = CaptureHistoryManager()
 
     private let logger = Logger(subsystem: "com.openshot", category: "history")
-    private let capturesDirectory: URL
+    /// Not `private` so `@testable import` can verify capture archiving
+    /// always lands here regardless of `preferences.saveLocation`.
+    let capturesDirectory: URL
     private let thumbnailsDirectory: URL
     private let modelContainer: ModelContainer?
 
@@ -84,12 +86,23 @@ final class CaptureHistoryManager {
         logger.info("CaptureHistoryManager initialized – captures: \(self.capturesDirectory.path(percentEncoded: false))")
     }
 
+    /// The single shared `ModelContainer` for `CaptureRecord`. Always create a
+    /// fresh `ModelContext` per task/thread from this container via
+    /// `makeContext()` — never share or pass a `ModelContext` instance across
+    /// actor boundaries, and never call `ModelContainer(for:)`/
+    /// `.modelContainer(for:)` elsewhere for this model type.
+    var sharedContainer: ModelContainer {
+        get throws {
+            guard let modelContainer else {
+                throw OpenShotError.fileIOFailed("ModelContainer not available")
+            }
+            return modelContainer
+        }
+    }
+
     /// Returns a new ModelContext from the shared container.
     func makeContext() throws -> ModelContext {
-        guard let container = modelContainer else {
-            throw OpenShotError.fileIOFailed("ModelContainer not available")
-        }
-        return ModelContext(container)
+        return ModelContext(try sharedContainer)
     }
 
     // MARK: - Save Capture
@@ -146,17 +159,14 @@ final class CaptureHistoryManager {
             imageData = data
         }
 
-        // Choose save directory: prefer the user's configured location, fall
-        // back to our Application Support directory.
-        let saveDir: URL
-        if FileManager.default.isWritableFile(atPath: preferences.saveLocation.path) {
-            saveDir = preferences.saveLocation
-        } else {
-            saveDir = capturesDirectory
-        }
-
+        // Always archive to our own Application Support directory — never to
+        // the user's configured save location. That directory is reserved
+        // for explicit user "Save" actions (see QuickAccessOverlay.saveToFile),
+        // which use their own naming template. Keeping these two writes fully
+        // decoupled means History's retention cleanup (`cleanupOldCaptures`)
+        // never deletes a file sitting in the user's visible folder.
         let filename = "OpenShot_\(dateString).\(ext)"
-        let fileURL = saveDir.appendingPathComponent(filename)
+        let fileURL = capturesDirectory.appendingPathComponent(filename)
         let thumbFilename = "thumb_\(dateString).png"
         let thumbURL = thumbnailsDirectory.appendingPathComponent(thumbFilename)
 
@@ -218,6 +228,38 @@ final class CaptureHistoryManager {
 
         logger.info("CaptureRecord saved – type: \(type), extension: \(fileExtension)")
         return record
+    }
+
+    /// Moves a recording/GIF out of the temporary directory into the user's
+    /// configured save location, then archives it via `saveRecording`. Used
+    /// by both the MP4 and GIF stop-recording paths so the "file left behind
+    /// in the temp directory, later auto-deleted" bug can only be fixed (or
+    /// broken) in one place.
+    ///
+    /// If the move fails, the recording is archived at its original temp URL
+    /// instead of throwing — losing the recording entirely would be worse
+    /// than leaving it in temp.
+    @discardableResult
+    func archiveRecording(
+        tempURL: URL,
+        type: String,
+        preferences: Preferences,
+        modelContext: ModelContext
+    ) throws -> URL {
+        let saveDir = preferences.saveLocation
+        var finalURL = tempURL
+
+        do {
+            try FileManager.default.createDirectory(at: saveDir, withIntermediateDirectories: true)
+            let destinationURL = saveDir.appendingPathComponent(tempURL.lastPathComponent)
+            try FileManager.default.moveItem(at: tempURL, to: destinationURL)
+            finalURL = destinationURL
+        } catch {
+            logger.warning("Failed to move \(type) to save location, archiving from temp instead: \(error.localizedDescription)")
+        }
+
+        try saveRecording(url: finalURL, type: type, modelContext: modelContext)
+        return finalURL
     }
 
     /// Creates a history record for a recording or GIF that was already
